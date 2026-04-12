@@ -54,5 +54,8 @@ fun EXPNXTheme(
         }
     }
 
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    MaterialTheme(
+        colorScheme = colorScheme,
+        content = content
+    )
 }

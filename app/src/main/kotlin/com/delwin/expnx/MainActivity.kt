@@ -8,6 +8,8 @@ import com.delwin.expnx.ui.screens.MainScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MainScreen() }
+        setContent {
+            MainScreen()
+        }
     }
 }

@@ -13,21 +13,23 @@ import com.delwin.expnx.R
 @Composable
 fun HomeScreen() {
     Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                        title = { Text(text = stringResource(id = R.string.app_name)) },
-                        colors =
-                                TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        titleContentColor = MaterialTheme.colorScheme.primary,
-                                )
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(text = stringResource(id = R.string.app_name))
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
                 )
-            },
-            modifier = Modifier.fillMaxSize()
+            )
+        }
     ) { innerPadding ->
+
         Greeting(
-                name = stringResource(id = R.string.welcome_message),
-                modifier = Modifier.padding(innerPadding)
+            name = stringResource(id = R.string.welcome_message),
+            modifier = Modifier.padding(innerPadding)
         )
     }
 }
