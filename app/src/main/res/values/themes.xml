@@ -1,8 +1,10 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
     <style name="Theme.EXPNX" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <!-- Brand colors using custom defined names in colors.xml -->
+        <item name="colorPrimary">@color/olive_primary</item>
+        <item name="colorPrimaryDark">@color/dark_forest</item>
+        <item name="colorAccent">@color/warm_tan</item>
+        <item name="android:statusBarColor">@color/dark_forest</item>
     </style>
 </resources>
