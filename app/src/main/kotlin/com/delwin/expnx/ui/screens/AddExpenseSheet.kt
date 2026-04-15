@@ -31,7 +31,7 @@ fun AddExpenseSheet(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .padding(bottom = 32.dp) // Extra padding for bottom sheet handles
+            .padding(bottom = 50.dp) // Extra padding for bottom sheet handles
     ) {
         Text(
             text = "Add New Expense",

@@ -51,7 +51,7 @@ fun TransactionsScreen(viewModel: AppViewModel) {
                         onDismissRequest = { showFilterMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("All Categories") },
+                            text = { Text("All Categories", color = WarmCream) },
                             onClick = {
                                 selectedCategory = null
                                 showFilterMenu = false
@@ -59,7 +59,7 @@ fun TransactionsScreen(viewModel: AppViewModel) {
                         )
                         Category.values().forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category.displayName) },
+                                text = { Text(category.displayName, color = WarmCream) },
                                 onClick = {
                                     selectedCategory = category
                                     showFilterMenu = false
