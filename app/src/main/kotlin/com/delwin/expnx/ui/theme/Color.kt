@@ -2,15 +2,21 @@ package com.delwin.expnx.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val OlivePrimary = Color(0xFF606C38)
-val DarkForest = Color(0xFF283618)
-val WarmCream = Color(0xFFFEFAE0)
-val WarmTan = Color(0xFFDDA15E)
-val BurntOrange = Color(0xFFBC6C25)
+// Base Dark Colors
+val NearBlack = Color(0xFF0F1115) // Deep charcoal base
+val SurfaceDark = Color(0xFF1A1D24)
 
-// Functional names based on requirements
-val PrimaryColor = OlivePrimary
-val DarkPrimaryColor = DarkForest
-val BackgroundColor = WarmCream
-val AccentColor = WarmTan
-val DeepAccentColor = BurntOrange
+// Accents
+val OliveAccent = Color(0xFF94A853) // Glowing elevated olive
+val OliveDim = Color(0xFF455029)
+val TanAccent = Color(0xFFE5B980)
+val BurntOrangeAccent = Color(0xFFD67B2A)
+val RedReveal = Color(0xFFE55353)
+
+// Typography Colors
+val CreamText = Color(0xFFF2F0E6)
+val MutedCream = Color(0xFFA19F96)
+
+// Glassmorphism overlays
+val GlassSurface = Color(0x15FFFFFF) // 8% white for frosted effect
+val GlassBorder = Color(0x20FFFFFF)  // 12% white for subtle borders

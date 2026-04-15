@@ -1,5 +1,6 @@
 package com.delwin.expnx.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.delwin.expnx.data.Category
@@ -34,14 +35,19 @@ fun StatisticsScreen(viewModel: AppViewModel) {
         categoryTotals.maxOfOrNull { it.second } ?: 1.0
     }
 
+    var animateBars by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        animateBars = true
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Statistics", color = WarmCream) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = OlivePrimary)
+                title = { Text("Statistics", color = CreamText, style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = NearBlack)
             )
         },
-        containerColor = WarmCream
+        containerColor = NearBlack
     ) { padding ->
         Column(
             modifier = Modifier
@@ -51,22 +57,28 @@ fun StatisticsScreen(viewModel: AppViewModel) {
         ) {
             Text(
                 text = "Spending Breakdown",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = DarkForest,
-                modifier = Modifier.padding(bottom = 16.dp)
+                style = MaterialTheme.typography.titleMedium,
+                color = MutedCream,
+                modifier = Modifier.padding(bottom = 24.dp)
             )
             
             if (categoryTotals.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No data to display", color = DarkForest.copy(alpha = 0.5f))
+                    Text("No data to display", color = MutedCream)
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     items(categoryTotals) { (category, total) ->
+                        val targetProgress = if (animateBars) (total / maxTotal).toFloat() else 0f
+                        val progress by animateFloatAsState(
+                            targetValue = targetProgress,
+                            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+                        )
+
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -77,39 +89,39 @@ fun StatisticsScreen(viewModel: AppViewModel) {
                                     Icon(
                                         imageVector = category.icon,
                                         contentDescription = null,
-                                        tint = OlivePrimary,
-                                        modifier = Modifier.size(20.dp)
+                                        tint = OliveAccent,
+                                        modifier = Modifier.size(24.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
                                     Text(
                                         text = category.displayName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = DarkForest
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = CreamText
                                     )
                                 }
                                 Text(
                                     text = "$${String.format("%.2f", total)}",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = BurntOrange
+                                    color = CreamText
                                 )
                             }
                             
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                             
                             Canvas(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(12.dp)
                             ) {
-                                val progressBarWidth = size.width * (total / maxTotal).toFloat()
+                                val progressBarWidth = size.width * progress
                                 drawRoundRect(
-                                    color = OlivePrimary.copy(alpha = 0.1f),
+                                    color = OliveDim.copy(alpha = 0.3f),
                                     size = size,
                                     cornerRadius = CornerRadius(6.dp.toPx())
                                 )
                                 drawRoundRect(
-                                    color = WarmTan,
+                                    brush = Brush.linearGradient(listOf(TanAccent, BurntOrangeAccent)),
                                     size = Size(width = progressBarWidth, height = size.height),
                                     cornerRadius = CornerRadius(6.dp.toPx())
                                 )

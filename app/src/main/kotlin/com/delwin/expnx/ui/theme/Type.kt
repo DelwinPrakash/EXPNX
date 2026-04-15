@@ -9,26 +9,58 @@ import androidx.compose.ui.unit.sp
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp,
-        color = DarkForest
+        color = CreamText
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.25.sp,
+        color = CreamText
+    ),
+    bodySmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.4.sp,
+        color = MutedCream
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Black,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.5).sp,
+        color = CreamText
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
         letterSpacing = 0.sp,
-        color = DarkForest
+        color = CreamText
+    ),
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.1.sp,
+        color = CreamText
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
-        color = OlivePrimary
+        color = TanAccent
     )
 )

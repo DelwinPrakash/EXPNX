@@ -41,7 +41,7 @@ fun AddExpenseSheet(
         Text(
             text = "Add New Expense",
             style = MaterialTheme.typography.titleLarge,
-            color = DarkForest,
+            color = CreamText,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
@@ -51,14 +51,17 @@ fun AddExpenseSheet(
                 amount = it
                 amountError = null
             },
-            label = { Text("Amount ($)") },
+            label = { Text("Amount ($)", color = MutedCream) },
+            textStyle = LocalTextStyle.current.copy(color = CreamText),
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = amountError != null,
-            supportingText = { amountError?.let { Text(it) } },
+            supportingText = { amountError?.let { Text(it, color = RedReveal) } },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = OlivePrimary,
-                unfocusedBorderColor = OlivePrimary.copy(alpha = 0.5f)
+                focusedBorderColor = OliveAccent,
+                unfocusedBorderColor = GlassBorder,
+                focusedLabelColor = OliveAccent,
+                cursorColor = OliveAccent
             )
         )
 
@@ -67,7 +70,7 @@ fun AddExpenseSheet(
         Text(
             text = "Category",
             style = MaterialTheme.typography.labelSmall,
-            color = OlivePrimary
+            color = MutedCream
         )
         Row(
             modifier = Modifier
@@ -87,12 +90,7 @@ fun AddExpenseSheet(
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = WarmTan,
-                        selectedLabelColor = DarkForest,
-                        selectedLeadingIconColor = DarkForest
-                    )
+                    }
                 )
             }
         }
@@ -102,11 +100,14 @@ fun AddExpenseSheet(
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text("Description") },
+            label = { Text("Description", color = MutedCream) },
+            textStyle = LocalTextStyle.current.copy(color = CreamText),
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = OlivePrimary,
-                unfocusedBorderColor = OlivePrimary.copy(alpha = 0.5f)
+                focusedBorderColor = OliveAccent,
+                unfocusedBorderColor = GlassBorder,
+                focusedLabelColor = OliveAccent,
+                cursorColor = OliveAccent
             )
         )
 
@@ -114,8 +115,8 @@ fun AddExpenseSheet(
 
         Button(
             onClick = { showDatePicker = true },
-            colors = ButtonDefaults.buttonColors(containerColor = WarmCream, contentColor = DarkForest),
-            border = androidx.compose.foundation.BorderStroke(1.dp, OlivePrimary.copy(alpha = 0.5f)),
+            colors = ButtonDefaults.buttonColors(containerColor = GlassSurface, contentColor = CreamText),
+            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder),
             modifier = Modifier.fillMaxWidth()
         ) {
             val date = datePickerState.selectedDateMillis?.let { Date(it) } ?: Date()
@@ -131,8 +132,8 @@ fun AddExpenseSheet(
             OutlinedButton(
                 onClick = onCancel,
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = DarkForest),
-                border = androidx.compose.foundation.BorderStroke(1.dp, OlivePrimary)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = CreamText),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
             ) {
                 Text("Cancel")
             }
@@ -146,7 +147,7 @@ fun AddExpenseSheet(
                     }
                 },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = OlivePrimary, contentColor = WarmCream)
+                colors = ButtonDefaults.buttonColors(containerColor = OliveAccent, contentColor = NearBlack)
             ) {
                 Text("Save")
             }
@@ -155,13 +156,13 @@ fun AddExpenseSheet(
 
     if (showDatePicker) {
         val customColorScheme = MaterialTheme.colorScheme.copy(
-            primary = OlivePrimary,
-            onPrimary = WarmCream,
-            surface = WarmCream,
-            onSurface = DarkForest,
-            onSurfaceVariant = DarkForest,
-            secondaryContainer = WarmTan,
-            onSecondaryContainer = BurntOrange
+            primary = OliveAccent,
+            onPrimary = NearBlack,
+            surface = SurfaceDark,
+            onSurface = CreamText,
+            onSurfaceVariant = MutedCream,
+            secondaryContainer = GlassSurface,
+            onSecondaryContainer = BurntOrangeAccent
         )
 
         MaterialTheme(colorScheme = customColorScheme){
@@ -169,12 +170,12 @@ fun AddExpenseSheet(
                 onDismissRequest = { showDatePicker = false },
                 confirmButton = {
                     TextButton(onClick = { showDatePicker = false }) {
-                        Text("OK")
+                        Text("OK", color = OliveAccent)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancel")
+                        Text("Cancel", color = OliveAccent)
                     }
                 }
             ) {

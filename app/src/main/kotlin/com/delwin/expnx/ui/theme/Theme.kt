@@ -16,63 +16,52 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = OlivePrimary,
-    secondary = WarmTan,
-    tertiary = BurntOrange,
-    background = DarkForest,
-    surface = DarkForest,
-    onPrimary = WarmCream,
-    onSecondary = DarkForest,
-    onTertiary = WarmCream,
-    onBackground = WarmCream,
-    onSurface = WarmCream,
+    primary = OliveAccent,
+    secondary = TanAccent,
+    tertiary = BurntOrangeAccent,
+    background = NearBlack,
+    surface = SurfaceDark,
+    onPrimary = NearBlack,
+    onSecondary = NearBlack,
+    onTertiary = NearBlack,
+    onBackground = CreamText,
+    onSurface = CreamText,
+    secondaryContainer = SurfaceDark,
+    onSecondaryContainer = TanAccent,
+    surfaceVariant = SurfaceDark,
+    onSurfaceVariant = MutedCream,
+    outline = OliveDim
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = OlivePrimary,
-    secondary = WarmTan,
-    tertiary = BurntOrange,
-    background = WarmCream,
-    surface = WarmCream,
-    onPrimary = WarmCream,
-    onSecondary = DarkForest,
-    onTertiary = WarmCream,
-    onBackground = DarkForest,
-    onSurface = DarkForest,
-    secondaryContainer = WarmTan,
-    onSecondaryContainer = DarkForest,
-    surfaceVariant = WarmCream,
-    onSurfaceVariant = DarkForest,
-    outline = OlivePrimary
-)
+// Unified dark/premium aesthetics, ignoring light scheme
+private val LightColorScheme = DarkColorScheme
 
 @Composable
 fun EXPNXTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+, but we want to stick to the brand palette
+    darkTheme: Boolean = true, // Force dark theme for the new aesthetic
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            dynamicDarkColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> DarkColorScheme
     }
+    
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = DarkForest.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            window.statusBarColor = NearBlack.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // Ensure Typography is defined as well
+        typography = Typography,
         content = content
     )
 }

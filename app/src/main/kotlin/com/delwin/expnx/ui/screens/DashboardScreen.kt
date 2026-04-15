@@ -1,51 +1,73 @@
 package com.delwin.expnx.ui.screens
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(viewModel: AppViewModel, navController: NavController) {
+fun DashboardScreen(viewModel: AppViewModel) {
     val totalSpent by viewModel.totalSpentThisMonth.collectAsState()
     val recentExpenses by viewModel.recentExpenses.collectAsState()
-    val budget = 5000.0 // Hardcoded for now, could be dynamic
+    val budget = 5000.0
     
     var showAddSheet by remember { mutableStateOf(false) }
+
+    // Start progress at 0f and animate to actual value
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
+    val targetProgress = if (isVisible) (totalSpent / budget).toFloat().coerceIn(0f, 1f) else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing)
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Expense Tracker", color = WarmCream) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = OlivePrimary)
+                title = { Text("Overview", color = CreamText, style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = NearBlack)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddSheet = true },
-                containerColor = WarmTan,
-                contentColor = DarkForest,
-                shape = CircleShape
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    // .shadow(16.dp, CircleShape, spotColor = TanAccent, ambientColor = TanAccent)
+                    .background(
+                        brush = Brush.radialGradient(listOf(TanAccent, BurntOrangeAccent)),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Expense")
+                IconButton(onClick = { showAddSheet = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Expense", tint = NearBlack, modifier = Modifier.size(32.dp))
+                }
             }
         },
-        containerColor = WarmCream
+        containerColor = NearBlack
     ) { padding ->
         Column(
             modifier = Modifier
@@ -53,67 +75,71 @@ fun DashboardScreen(viewModel: AppViewModel, navController: NavController) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Summary Card
+            // Glassmorphism Summary Card
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                colors = CardDefaults.cardColors(containerColor = WarmCream),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, OlivePrimary.copy(alpha = 0.3f))
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                elevation = CardDefaults.cardElevation(0.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
             ) {
-                Row(
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxWidth()
+                        .background(Brush.linearGradient(listOf(GlassSurface, Color(0x05FFFFFF))))
+                        .padding(24.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Monthly Budget",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = OlivePrimary
-                        )
-                        Text(
-                            text = "$${String.format("%.2f", totalSpent)}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = BurntOrange
-                        )
-                        Text(
-                            text = "of $${String.format("%.0f", budget)} spent",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = DarkForest.copy(alpha = 0.7f)
-                        )
-                    }
-                    
-                    Box(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            progress = (totalSpent / budget).toFloat().coerceIn(0f, 1f),
-                            modifier = Modifier.size(100.dp),
-                            color = if (totalSpent > budget) Color.Red else OlivePrimary,
-                            trackColor = OlivePrimary.copy(alpha = 0.1f),
-                            strokeWidth = 10.dp,
-                            strokeCap = StrokeCap.Round
-                        )
-                        Text(
-                            text = "${((totalSpent / budget) * 100).toInt()}%",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkForest
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Spent this month",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = OliveAccent
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$${String.format("%.2f", totalSpent)}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = CreamText
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "from $${String.format("%.0f", budget)} budget",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MutedCream
+                            )
+                        }
+                        
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                progress = animatedProgress,
+                                modifier = Modifier.size(100.dp),
+                                color = if (totalSpent > budget) RedReveal else OliveAccent,
+                                trackColor = OliveDim.copy(alpha = 0.3f),
+                                strokeWidth = 8.dp,
+                                strokeCap = StrokeCap.Round
+                            )
+                            Text(
+                                text = "${(animatedProgress * 100).toInt()}%",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = CreamText
+                            )
+                        }
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             Text(
                 text = "Recent Transactions",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = DarkForest,
-                modifier = Modifier.padding(bottom = 8.dp)
+                style = MaterialTheme.typography.titleMedium,
+                color = MutedCream,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
             
             LazyColumn(modifier = Modifier.weight(1f)) {
@@ -131,7 +157,7 @@ fun DashboardScreen(viewModel: AppViewModel, navController: NavController) {
                         ) {
                             Text(
                                 "No transactions yet",
-                                color = DarkForest.copy(alpha = 0.5f)
+                                color = MutedCream
                             )
                         }
                     }
@@ -143,8 +169,8 @@ fun DashboardScreen(viewModel: AppViewModel, navController: NavController) {
     if (showAddSheet) {
         ModalBottomSheet(
             onDismissRequest = { showAddSheet = false },
-            containerColor = WarmCream,
-            contentColor = DarkForest
+            containerColor = SurfaceDark,
+            contentColor = CreamText
         ) {
             AddExpenseSheet(
                 onSave = { amount, category, desc, date ->

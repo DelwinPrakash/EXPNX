@@ -3,10 +3,15 @@ package com.delwin.expnx
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -32,14 +37,37 @@ class MainActivity : ComponentActivity() {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentDestination = navBackStackEntry?.destination
                         NavigationBar(
-                            containerColor = OlivePrimary,
-                            contentColor = WarmCream
+                            containerColor = SurfaceDark,
+                            contentColor = CreamText,
+                            tonalElevation = 8.dp
                         ) {
                             bottomNavItems.forEach { screen ->
+                                val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                
+                                val scale by animateFloatAsState(
+                                    targetValue = if (selected) 1.2f else 1.0f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                )
+
                                 NavigationBarItem(
-                                    icon = { Icon(screen.icon, contentDescription = null) },
-                                    label = { Text(screen.title) },
-                                    selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                    icon = {
+                                        Box(modifier = Modifier.scale(scale)) {
+                                            Icon(screen.icon, contentDescription = null)
+                                        }
+                                    },
+                                    label = {
+                                        AnimatedVisibility(
+                                            visible = selected,
+                                            enter = fadeIn() + expandVertically(),
+                                            exit = fadeOut() + shrinkVertically()
+                                        ) {
+                                            Text(screen.title)
+                                        }
+                                    },
+                                    selected = selected,
                                     onClick = {
                                         navController.navigate(screen.route) {
                                             popUpTo(navController.graph.findStartDestination().id) {
@@ -50,11 +78,11 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = DarkForest,
-                                        selectedTextColor = DarkForest,
-                                        indicatorColor = WarmTan,
-                                        unselectedIconColor = WarmCream,
-                                        unselectedTextColor = WarmCream
+                                        selectedIconColor = NearBlack,
+                                        selectedTextColor = OliveAccent,
+                                        indicatorColor = OliveAccent,
+                                        unselectedIconColor = MutedCream,
+                                        unselectedTextColor = MutedCream
                                     )
                                 )
                             }
@@ -64,10 +92,16 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = Screen.Dashboard.route,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .background(NearBlack),
+                        enterTransition = { fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300)) { it / 8 } },
+                        exitTransition = { fadeOut(animationSpec = tween(300)) },
+                        popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+                        popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutVertically(animationSpec = tween(300)) { it / 8 } }
                     ) {
                         composable(Screen.Dashboard.route) {
-                            DashboardScreen(viewModel, navController)
+                            DashboardScreen(viewModel)
                         }
                         composable(Screen.Transactions.route) {
                             TransactionsScreen(viewModel)
