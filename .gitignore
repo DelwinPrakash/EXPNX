@@ -9,6 +9,7 @@ build/
 *.iws
 *.ipr
 local.properties
+key.properties
 
 # Native and NDK
 .externalNativeBuild/
