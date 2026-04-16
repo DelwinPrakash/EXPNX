@@ -24,6 +24,7 @@ import com.delwin.expnx.data.Expense
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 import kotlinx.coroutines.launch
+import com.delwin.expnx.ui.components.ExpenseItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

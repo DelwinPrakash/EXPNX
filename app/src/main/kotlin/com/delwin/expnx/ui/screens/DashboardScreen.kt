@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.components.SetBudgetDialog
+import com.delwin.expnx.ui.components.ExpenseItem
 import com.delwin.expnx.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,4 +1,4 @@
-package com.delwin.expnx.ui.screens
+package com.delwin.expnx.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
