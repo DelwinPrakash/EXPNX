@@ -107,14 +107,14 @@ fun DashboardScreen(viewModel: AppViewModel) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "$${String.format("%.2f", totalSpent)}",
+                                text = "₹${String.format("%.2f", totalSpent)}",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = CreamText
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             if (budget != null) {
                                 Text(
-                                    text = "from $${String.format("%.0f", budget)} budget",
+                                    text = "from ₹${String.format("%.0f", budget)} budget",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MutedCream
                                 )

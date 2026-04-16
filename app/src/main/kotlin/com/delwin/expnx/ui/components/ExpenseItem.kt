@@ -71,7 +71,7 @@ fun ExpenseItem(expense: Expense, modifier: Modifier = Modifier) {
                 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "$${String.format("%.2f", expense.amount)}",
+                        text = "₹${String.format("%.2f", expense.amount)}",
                         style = MaterialTheme.typography.titleMedium,
                         color = CreamText
                     )

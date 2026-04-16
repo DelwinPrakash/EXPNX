@@ -51,7 +51,7 @@ fun AddExpenseSheet(
                 amount = it
                 amountError = null
             },
-            label = { Text("Amount ($)", color = MutedCream) },
+            label = { Text("Amount (₹)", color = MutedCream) },
             textStyle = LocalTextStyle.current.copy(color = CreamText),
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

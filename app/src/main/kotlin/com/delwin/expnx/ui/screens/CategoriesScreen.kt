@@ -81,7 +81,7 @@ fun CategoriesScreen(viewModel: AppViewModel) {
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             Text(
-                                text = "$${String.format("%.2f", spent)}",
+                                text = "₹${String.format("%.2f", spent)}",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = BurntOrangeAccent,
                                 fontWeight = FontWeight.Bold

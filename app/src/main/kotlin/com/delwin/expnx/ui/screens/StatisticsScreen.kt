@@ -100,7 +100,7 @@ fun StatisticsScreen(viewModel: AppViewModel) {
                                     )
                                 }
                                 Text(
-                                    text = "$${String.format("%.2f", total)}",
+                                    text = "₹${String.format("%.2f", total)}",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = CreamText

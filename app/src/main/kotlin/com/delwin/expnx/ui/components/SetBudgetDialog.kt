@@ -39,7 +39,7 @@ fun SetBudgetDialog(
                         isError = false
                     },
                     label = { Text("Monthly Budget", color = MutedCream) },
-                    prefix = { Text("$", color = CreamText) },
+                    prefix = { Text("₹", color = CreamText) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = isError,
