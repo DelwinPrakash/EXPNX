@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delwin.expnx.ui.AppViewModel
+import com.delwin.expnx.ui.components.SetBudgetDialog
 import com.delwin.expnx.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,9 +29,10 @@ import com.delwin.expnx.ui.theme.*
 fun DashboardScreen(viewModel: AppViewModel) {
     val totalSpent by viewModel.totalSpentThisMonth.collectAsState()
     val recentExpenses by viewModel.recentExpenses.collectAsState()
-    val budget = 5000.0
+    val budget by viewModel.budget.collectAsState()
     
     var showAddSheet by remember { mutableStateOf(false) }
+    var showSetBudgetDialog by remember { mutableStateOf(false) }
 
     // Start progress at 0f and animate to actual value
     var isVisible by remember { mutableStateOf(false) }
@@ -38,7 +40,9 @@ fun DashboardScreen(viewModel: AppViewModel) {
         isVisible = true
     }
 
-    val targetProgress = if (isVisible) (totalSpent / budget).toFloat().coerceIn(0f, 1f) else 0f
+    val targetProgress = if (isVisible && budget != null && budget!! > 0) {
+        (totalSpent / budget!!).toFloat().coerceIn(0f, 1f)
+    } else 0f
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
         animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing)
@@ -107,18 +111,37 @@ fun DashboardScreen(viewModel: AppViewModel) {
                                 color = CreamText
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "from $${String.format("%.0f", budget)} budget",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MutedCream
-                            )
+                            if (budget != null) {
+                                Text(
+                                    text = "from $${String.format("%.0f", budget)} budget",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MutedCream
+                                )
+                            } else {
+                                Text(
+                                    text = "No budget set",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MutedCream
+                                )
+                            }
+                            TextButton(
+                                onClick = { showSetBudgetDialog = true },
+                                contentPadding = PaddingValues(0.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text(
+                                    text = if (budget != null) "Edit Budget" else "Set Budget",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TanAccent
+                                )
+                            }
                         }
                         
                         Box(contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
                                 progress = animatedProgress,
                                 modifier = Modifier.size(100.dp),
-                                color = if (totalSpent > budget) RedReveal else OliveAccent,
+                                color = if (budget != null && totalSpent > budget!!) RedReveal else OliveAccent,
                                 trackColor = OliveDim.copy(alpha = 0.3f),
                                 strokeWidth = 8.dp,
                                 strokeCap = StrokeCap.Round
@@ -180,5 +203,20 @@ fun DashboardScreen(viewModel: AppViewModel) {
                 onCancel = { showAddSheet = false }
             )
         }
+    }
+    
+    if (showSetBudgetDialog) {
+        SetBudgetDialog(
+            initialBudget = budget,
+            onSave = { 
+                viewModel.saveBudget(it)
+                showSetBudgetDialog = false
+            },
+            onClear = {
+                viewModel.clearBudget()
+                showSetBudgetDialog = false
+            },
+            onDismiss = { showSetBudgetDialog = false }
+        )
     }
 }

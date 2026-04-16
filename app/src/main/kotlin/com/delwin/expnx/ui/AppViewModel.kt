@@ -9,6 +9,7 @@ import com.delwin.expnx.ExpenseApplication
 import com.delwin.expnx.data.Category
 import com.delwin.expnx.data.Expense
 import com.delwin.expnx.data.ExpenseRepository
+import com.delwin.expnx.data.UserPreferencesRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -22,7 +23,10 @@ data class DashboardUiState(
     val recentExpenses: List<Expense> = emptyList()
 )
 
-class AppViewModel(private val repository: ExpenseRepository) : ViewModel() {
+class AppViewModel(
+    private val repository: ExpenseRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
+) : ViewModel() {
 
     val allExpenses: StateFlow<List<Expense>> = repository.allExpenses
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -35,6 +39,9 @@ class AppViewModel(private val repository: ExpenseRepository) : ViewModel() {
         .map { it.take(10) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val budget: StateFlow<Double?> = userPreferencesRepository.monthlyBudget
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun saveExpense(amount: Double, category: Category, description: String, date: Long) {
         viewModelScope.launch {
             repository.insertExpense(Expense(amount = amount, category = category, description = description, date = date))
@@ -44,6 +51,18 @@ class AppViewModel(private val repository: ExpenseRepository) : ViewModel() {
     fun deleteExpense(expense: Expense) {
         viewModelScope.launch {
             repository.deleteExpense(expense)
+        }
+    }
+
+    fun saveBudget(amount: Double) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveBudget(amount)
+        }
+    }
+
+    fun clearBudget() {
+        viewModelScope.launch {
+            userPreferencesRepository.clearBudget()
         }
     }
 
@@ -76,7 +95,10 @@ class AppViewModel(private val repository: ExpenseRepository) : ViewModel() {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as ExpenseApplication)
-                AppViewModel(application.container.expenseRepository)
+                AppViewModel(
+                    repository = application.container.expenseRepository,
+                    userPreferencesRepository = application.container.userPreferencesRepository
+                )
             }
         }
     }
