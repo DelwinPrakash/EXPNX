@@ -38,7 +38,7 @@ private val LightColorScheme = DarkColorScheme
 
 @Composable
 fun EXPNXTheme(
-    darkTheme: Boolean = true, // Force dark theme for the new aesthetic
+    // darkTheme: Boolean = true, // Force dark theme for the new aesthetic
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

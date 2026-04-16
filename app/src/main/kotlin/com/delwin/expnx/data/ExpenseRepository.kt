@@ -36,10 +36,7 @@ class ExpenseRepository(private val expenseDao: ExpenseDao) {
         return expenseDao.getTotalSpentInRange(startOfMonth, endOfMonth)
     }
 
-    fun getTotalSpentByCategory(category: Category, startDate: Long, endDate: Long): Flow<Double?> {
-        // We could add a specific query for this, or just use the existing flow and map it
-        // For simplicity, let's just stick to the current DAO methods for now
-        // But a query would be better: SELECT SUM(amount) FROM expenses WHERE category = :category AND date BETWEEN :start AND :end
-        return expenseDao.getTotalSpentInRange(startDate, endDate) // This is temporary, will fix DAO if needed
+    fun getTotalSpentByCategory(startDate: Long, endDate: Long): Flow<Double?> {
+        return expenseDao.getTotalSpentInRange(startDate, endDate)
     }
 }

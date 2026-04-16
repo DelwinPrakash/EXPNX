@@ -140,7 +140,7 @@ fun DashboardScreen(viewModel: AppViewModel) {
                         
                         Box(contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
-                                progress = animatedProgress,
+                                progress = { animatedProgress },
                                 modifier = Modifier.size(100.dp),
                                 color = if (budget != null && totalSpent > budget!!) RedReveal else OliveAccent,
                                 trackColor = OliveDim.copy(alpha = 0.3f),

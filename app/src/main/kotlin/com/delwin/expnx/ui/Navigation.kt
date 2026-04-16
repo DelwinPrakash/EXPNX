@@ -6,10 +6,11 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.List
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.automirrored.filled.List
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
-    object Transactions : Screen("transactions", "Transactions", Icons.Default.List)
+    object Transactions : Screen("transactions", "Transactions", Icons.AutoMirrored.Filled.List)
     object Categories : Screen("categories", "Categories", Icons.Default.Category)
     object Statistics : Screen("statistics", "Statistics", Icons.Default.BarChart)
 }

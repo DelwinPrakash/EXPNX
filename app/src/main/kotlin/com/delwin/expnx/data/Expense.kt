@@ -3,6 +3,7 @@ package com.delwin.expnx.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 
@@ -12,7 +13,7 @@ enum class Category(val displayName: String, val icon: ImageVector) {
     SHOPPING("Shopping", Icons.Default.ShoppingBag),
     HEALTH("Health", Icons.Default.MedicalServices),
     ENTERTAINMENT("Entertainment", Icons.Default.Movie),
-    BILLS("Bills", Icons.Default.ReceiptLong),
+    BILLS("Bills", Icons.AutoMirrored.Filled.ReceiptLong),
     OTHER("Other", Icons.Default.Category)
 }
 
