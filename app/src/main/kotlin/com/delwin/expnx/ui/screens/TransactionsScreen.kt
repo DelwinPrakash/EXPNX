@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
@@ -25,6 +26,9 @@ import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 import kotlinx.coroutines.launch
 import com.delwin.expnx.ui.components.ExpenseItem
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +40,21 @@ fun TransactionsScreen(viewModel: AppViewModel) {
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var showFilterMenu by remember { mutableStateOf(false) }
 
-    val filteredExpenses = if (selectedCategory == null) {
+    var selectedMonth by remember { mutableStateOf<String?>(null) }
+    var showMonthMenu by remember { mutableStateOf(false) }
+
+    val availableMonths = remember(allExpenses) {
+        val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
         allExpenses
-    } else {
-        allExpenses.filter { it.category == selectedCategory }
+            .sortedByDescending { it.date }
+            .map { format.format(Date(it.date)) }
+            .distinct()
+    }
+
+    val filteredExpenses = allExpenses.filter { expense ->
+        val matchesCategory = selectedCategory == null || expense.category == selectedCategory
+        val matchesMonth = selectedMonth == null || SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(expense.date)) == selectedMonth
+        matchesCategory && matchesMonth
     }
 
     Scaffold(
@@ -58,6 +73,32 @@ fun TransactionsScreen(viewModel: AppViewModel) {
             TopAppBar(
                 title = { Text("Transactions", color = CreamText, style = MaterialTheme.typography.titleLarge) },
                 actions = {
+                    IconButton(onClick = { showMonthMenu = !showMonthMenu }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Filter by Month", tint = CreamText)
+                    }
+                    DropdownMenu(
+                        expanded = showMonthMenu,
+                        onDismissRequest = { showMonthMenu = false },
+                        modifier = Modifier.background(SurfaceDark)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("All Months", color = CreamText) },
+                            onClick = {
+                                selectedMonth = null
+                                showMonthMenu = false
+                            }
+                        )
+                        availableMonths.forEach { month ->
+                            DropdownMenuItem(
+                                text = { Text(month, color = CreamText) },
+                                onClick = {
+                                    selectedMonth = month
+                                    showMonthMenu = false
+                                }
+                            )
+                        }
+                    }
+
                     IconButton(onClick = { showFilterMenu = !showFilterMenu }) {
                         Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = CreamText)
                     }
@@ -162,7 +203,7 @@ fun TransactionsScreen(viewModel: AppViewModel) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (selectedCategory != null) "No transactions for this category" else "No transactions yet",
+                            text = if (selectedCategory != null || selectedMonth != null) "No transactions for these filters" else "No transactions yet",
                             color = MutedCream
                         )
                     }
