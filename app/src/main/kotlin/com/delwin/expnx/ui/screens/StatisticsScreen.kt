@@ -5,7 +5,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,11 +29,31 @@ import com.delwin.expnx.ui.theme.*
 @Composable
 fun StatisticsScreen(viewModel: AppViewModel) {
     val allExpenses by viewModel.allExpenses.collectAsState()
+
+    var selectedMonth by remember { mutableStateOf<String?>(null) }
+    var showMonthMenu by remember { mutableStateOf(false) }
+
+    val availableMonths = remember(allExpenses) {
+        val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        allExpenses
+            .sortedByDescending { it.date }
+            .map { format.format(Date(it.date)) }
+            .distinct()
+    }
+
+    val filteredExpenses = remember(allExpenses, selectedMonth) {
+        if (selectedMonth == null) {
+            allExpenses
+        } else {
+            val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+            allExpenses.filter { format.format(Date(it.date)) == selectedMonth }
+        }
+    }
     
     // Calculate category totals
-    val categoryTotals = remember(allExpenses) {
+    val categoryTotals = remember(filteredExpenses) {
         Category.values().map { category ->
-            category to allExpenses.filter { it.category == category }.sumOf { it.amount }
+            category to filteredExpenses.filter { it.category == category }.sumOf { it.amount }
         }.filter { it.second > 0 }.sortedByDescending { it.second }
     }
     
@@ -44,6 +70,33 @@ fun StatisticsScreen(viewModel: AppViewModel) {
         topBar = {
             TopAppBar(
                 title = { Text("Statistics", color = CreamText, style = MaterialTheme.typography.titleLarge) },
+                actions = {
+                    IconButton(onClick = { showMonthMenu = !showMonthMenu }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Filter by Month", tint = CreamText)
+                    }
+                    DropdownMenu(
+                        expanded = showMonthMenu,
+                        onDismissRequest = { showMonthMenu = false },
+                        modifier = Modifier.background(SurfaceDark)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("All Months", color = CreamText) },
+                            onClick = {
+                                selectedMonth = null
+                                showMonthMenu = false
+                            }
+                        )
+                        availableMonths.forEach { month ->
+                            DropdownMenuItem(
+                                text = { Text(month, color = CreamText) },
+                                onClick = {
+                                    selectedMonth = month
+                                    showMonthMenu = false
+                                }
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NearBlack)
             )
         },

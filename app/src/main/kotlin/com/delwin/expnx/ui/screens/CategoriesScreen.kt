@@ -6,8 +6,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -21,10 +26,59 @@ import com.delwin.expnx.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriesScreen(viewModel: AppViewModel) {
+    val allExpenses by viewModel.allExpenses.collectAsState()
+
+    var selectedMonth by remember { mutableStateOf<String?>(null) }
+    var showMonthMenu by remember { mutableStateOf(false) }
+
+    val availableMonths = remember(allExpenses) {
+        val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        allExpenses
+            .sortedByDescending { it.date }
+            .map { format.format(Date(it.date)) }
+            .distinct()
+    }
+
+    val filteredExpenses = remember(allExpenses, selectedMonth) {
+        if (selectedMonth == null) {
+            allExpenses
+        } else {
+            val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+            allExpenses.filter { format.format(Date(it.date)) == selectedMonth }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Categories", color = CreamText, style = MaterialTheme.typography.titleLarge) },
+                actions = {
+                    IconButton(onClick = { showMonthMenu = !showMonthMenu }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Filter by Month", tint = CreamText)
+                    }
+                    DropdownMenu(
+                        expanded = showMonthMenu,
+                        onDismissRequest = { showMonthMenu = false },
+                        modifier = Modifier.background(SurfaceDark)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("All Months", color = CreamText) },
+                            onClick = {
+                                selectedMonth = null
+                                showMonthMenu = false
+                            }
+                        )
+                        availableMonths.forEach { month ->
+                            DropdownMenuItem(
+                                text = { Text(month, color = CreamText) },
+                                onClick = {
+                                    selectedMonth = month
+                                    showMonthMenu = false
+                                }
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NearBlack)
             )
         },
@@ -41,7 +95,7 @@ fun CategoriesScreen(viewModel: AppViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(Category.values()) { category ->
-                val spent by viewModel.getCategorySpendThisMonth(category).collectAsState()
+                val spent = filteredExpenses.filter { it.category == category }.sumOf { it.amount }
                 
                 Card(
                     modifier = Modifier
@@ -90,7 +144,7 @@ fun CategoriesScreen(viewModel: AppViewModel) {
                             Spacer(modifier = Modifier.height(4.dp))
                             
                             Text(
-                                text = "this month",
+                                text = selectedMonth ?: "All time",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MutedCream
                             )
