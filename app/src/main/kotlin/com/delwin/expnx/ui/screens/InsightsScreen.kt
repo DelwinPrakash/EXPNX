@@ -27,7 +27,7 @@ import com.delwin.expnx.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatisticsScreen(viewModel: AppViewModel) {
+fun InsightsScreen(viewModel: AppViewModel) {
     val allExpenses by viewModel.allExpenses.collectAsState()
 
     var selectedMonth by remember { mutableStateOf<String?>(null) }

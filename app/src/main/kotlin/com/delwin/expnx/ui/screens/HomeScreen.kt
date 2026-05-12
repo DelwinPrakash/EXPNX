@@ -32,7 +32,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(viewModel: AppViewModel) {
+fun HomeScreen(viewModel: AppViewModel) {
     val totalSpent by viewModel.totalSpentThisMonth.collectAsState()
     val recentExpenses by viewModel.recentExpenses.collectAsState()
     val budget by viewModel.budget.collectAsState()
@@ -159,8 +159,8 @@ fun SummaryCard(budget: Double?, totalSpent: Double, onEditBudget: () -> Unit){
         isVisible = true
     }
 
-    val targetProgress = if (isVisible && budget != null && budget!! > 0) {
-        (totalSpent / budget!!).toFloat().coerceIn(0f, 1f)
+    val targetProgress = if (isVisible && budget != null && budget > 0) {
+        (totalSpent / budget).toFloat().coerceIn(0f, 1f)
     } else 0f
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
@@ -230,7 +230,7 @@ fun SummaryCard(budget: Double?, totalSpent: Double, onEditBudget: () -> Unit){
                     CircularProgressIndicator(
                         progress = { animatedProgress },
                         modifier = Modifier.size(100.dp),
-                        color = if (budget != null && totalSpent > budget!!) RedReveal else OliveAccent,
+                        color = if (budget != null && totalSpent > budget) RedReveal else OliveAccent,
                         trackColor = OliveDim.copy(alpha = 0.3f),
                         strokeWidth = 8.dp,
                         strokeCap = StrokeCap.Round

@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = Screen.Dashboard.route,
+                        startDestination = Screen.Home.route,
                         modifier = Modifier
                             .padding(innerPadding)
                             .background(NearBlack),
@@ -100,20 +100,20 @@ class MainActivity : ComponentActivity() {
                         popEnterTransition = { fadeIn(animationSpec = tween(300)) },
                         popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutVertically(animationSpec = tween(300)) { it / 8 } }
                     ) {
-                        composable(Screen.Dashboard.route) {
-                            DashboardScreen(viewModel)
+                        composable(Screen.Home.route) {
+                            HomeScreen(viewModel)
                         }
-                        composable(Screen.Transactions.route) {
+                        composable(Screen.Activity.route) {
                             ActivityScreen(viewModel)
-                        }
-                        composable(Screen.Categories.route) {
-                            CategoriesScreen(viewModel)
-                        }
-                        composable(Screen.Statistics.route) {
-                            StatisticsScreen(viewModel)
                         }
                         composable(Screen.Add.route) {
                             Box(modifier = Modifier.fillMaxSize())
+                        }
+                        composable(Screen.Plans.route) {
+                            PlansScreen(viewModel)
+                        }
+                        composable(Screen.Insights.route) {
+                            InsightsScreen(viewModel)
                         }
                     }
                 }
