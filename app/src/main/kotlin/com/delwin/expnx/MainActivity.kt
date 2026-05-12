@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
                             DashboardScreen(viewModel)
                         }
                         composable(Screen.Transactions.route) {
-                            TransactionsScreen(viewModel)
+                            ActivityScreen(viewModel)
                         }
                         composable(Screen.Categories.route) {
                             CategoriesScreen(viewModel)
