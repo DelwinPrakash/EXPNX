@@ -112,6 +112,9 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Statistics.route) {
                             StatisticsScreen(viewModel)
                         }
+                        composable(Screen.Add.route) {
+                            Box(modifier = Modifier.fillMaxSize())
+                        }
                     }
                 }
             }
