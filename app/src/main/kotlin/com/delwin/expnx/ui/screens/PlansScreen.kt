@@ -1,155 +1,89 @@
 package com.delwin.expnx.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.delwin.expnx.data.Category
 import com.delwin.expnx.ui.AppViewModel
+import com.delwin.expnx.ui.screens.plans.BillsTab
+import com.delwin.expnx.ui.screens.plans.BudgetsTab
+import com.delwin.expnx.ui.screens.plans.GoalsTab
 import com.delwin.expnx.ui.theme.*
+
+enum class PlanTab {
+    BUDGETS, GOALS, BILLS
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlansScreen(viewModel: AppViewModel) {
-    val allExpenses by viewModel.allExpenses.collectAsState()
-
-    var selectedMonth by remember { mutableStateOf<String?>(null) }
-    var showMonthMenu by remember { mutableStateOf(false) }
-
-    val availableMonths = remember(allExpenses) {
-        val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-        allExpenses
-            .sortedByDescending { it.date }
-            .map { format.format(Date(it.date)) }
-            .distinct()
-    }
-
-    val filteredExpenses = remember(allExpenses, selectedMonth) {
-        if (selectedMonth == null) {
-            allExpenses
-        } else {
-            val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-            allExpenses.filter { format.format(Date(it.date)) == selectedMonth }
-        }
-    }
+    var selectedTab by remember { mutableStateOf(PlanTab.BUDGETS) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Categories", color = CreamText, style = MaterialTheme.typography.titleLarge) },
-                actions = {
-                    IconButton(onClick = { showMonthMenu = !showMonthMenu }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Filter by Month", tint = CreamText)
-                    }
-                    DropdownMenu(
-                        expanded = showMonthMenu,
-                        onDismissRequest = { showMonthMenu = false },
-                        modifier = Modifier.background(SurfaceDark)
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("All Months", color = CreamText) },
-                            onClick = {
-                                selectedMonth = null
-                                showMonthMenu = false
-                            }
-                        )
-                        availableMonths.forEach { month ->
-                            DropdownMenuItem(
-                                text = { Text(month, color = CreamText) },
-                                onClick = {
-                                    selectedMonth = month
-                                    showMonthMenu = false
-                                }
-                            )
-                        }
-                    }
-                },
+                title = { Text("Plans", color = CreamText, style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NearBlack)
             )
         },
         containerColor = NearBlack
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+        Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp),
-            contentPadding = PaddingValues(bottom = 100.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(Category.values()) { category ->
-                val spent = filteredExpenses.filter { it.category == category }.sumOf { it.amount }
-                
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    elevation = CardDefaults.cardElevation(0.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
-                ) {
+            // Custom Segmented Control / TabRow
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .background(SurfaceDark, RoundedCornerShape(24.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                PlanTab.values().forEach { tab ->
+                    val isSelected = selectedTab == tab
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(Brush.linearGradient(listOf(GlassSurface, Color(0x05FFFFFF))))
-                            .padding(16.dp)
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (isSelected) OliveAccent else Color.Transparent)
+                            .clickable { selectedTab = tab }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = category.icon,
-                                contentDescription = null,
-                                tint = BurntOrangeAccent,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            Text(
-                                text = category.displayName,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = CreamText
-                            )
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Text(
-                                text = "₹${String.format("%.2f", spent)}",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = BurntOrangeAccent,
-                                fontWeight = FontWeight.Bold
-                            )
-                            
-                            Spacer(modifier = Modifier.height(4.dp))
-                            
-                            Text(
-                                text = selectedMonth ?: "All time",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MutedCream
-                            )
-                        }
+                        Text(
+                            text = tab.name.lowercase().replaceFirstChar { it.uppercase() },
+                            color = if (isSelected) NearBlack else MutedCream,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
+                }
+            }
+
+            // Tab Content
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                modifier = Modifier.fillMaxSize()
+            ) { targetTab ->
+                when (targetTab) {
+                    PlanTab.BUDGETS -> BudgetsTab(viewModel)
+                    PlanTab.GOALS -> GoalsTab()
+                    PlanTab.BILLS -> BillsTab()
                 }
             }
         }
