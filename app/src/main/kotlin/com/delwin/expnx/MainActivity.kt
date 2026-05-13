@@ -38,7 +38,6 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val viewModel: AppViewModel = viewModel(factory = AppViewModel.Factory)
                 var showAddSheet by remember { mutableStateOf(false) }
-                var showAddExpenseSheet by remember { mutableStateOf(false) }
                 
                 Scaffold(
                     bottomBar = {
@@ -131,126 +130,9 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (showAddSheet) {
-                    AddBottomSheet(
-                        onDismiss = { showAddSheet = false },
-                        onAddExpenseClick = {
-                            showAddSheet = false
-                            showAddExpenseSheet = true
-                        }
-                    )
-                }
-
-                if (showAddExpenseSheet) {
-                    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                    ModalBottomSheet(
-                        onDismissRequest = { showAddExpenseSheet = false },
-                        sheetState = sheetState,
-                        containerColor = SurfaceDark,
-                        contentColor = CreamText
-                    ) {
-                        AddExpenseSheet(
-                            onSave = { amount, category, description, date ->
-                                viewModel.saveExpense(amount, category, description, date)
-                                showAddExpenseSheet = false
-                            },
-                            onCancel = { showAddExpenseSheet = false }
-                        )
-                    }
+                    AddScreen(viewModel = viewModel, onDismiss = { showAddSheet = false })
                 }
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddBottomSheet(
-    onDismiss: () -> Unit,
-    onAddExpenseClick: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = SurfaceDark,
-        contentColor = CreamText,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                "Create New",
-                style = MaterialTheme.typography.titleLarge,
-                color = CreamText,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            BottomSheetItem(
-                icon = Icons.Default.ArrowDownward,
-                title = "Add Expense",
-                iconColor = RedReveal,
-                onClick = onAddExpenseClick
-            )
-            BottomSheetItem(
-                icon = Icons.Default.ArrowUpward,
-                title = "Add Income",
-                iconColor = OliveAccent,
-                onClick = onDismiss
-            )
-            BottomSheetItem(
-                icon = Icons.Default.SwapHoriz,
-                title = "Transfer",
-                iconColor = TanAccent,
-                onClick = onDismiss
-            )
-            BottomSheetItem(
-                icon = Icons.Default.DocumentScanner,
-                title = "Scan Receipt",
-                iconColor = BurntOrangeAccent,
-                onClick = onDismiss
-            )
-            BottomSheetItem(
-                icon = Icons.Default.Mic,
-                title = "Voice Entry",
-                iconColor = MutedCream,
-                onClick = onDismiss
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomSheetItem(
-    icon: ImageVector,
-    title: String,
-    iconColor: Color,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        color = Color.Transparent,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(GlassSurface, shape = MaterialTheme.shapes.medium),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = iconColor)
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = CreamText)
         }
     }
 }
