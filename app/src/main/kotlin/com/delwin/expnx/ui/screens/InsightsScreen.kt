@@ -1,188 +1,371 @@
 package com.delwin.expnx.ui.screens
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.delwin.expnx.data.Category
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(viewModel: AppViewModel) {
-    val allExpenses by viewModel.allExpenses.collectAsState()
-
-    var selectedMonth by remember { mutableStateOf<String?>(null) }
-    var showMonthMenu by remember { mutableStateOf(false) }
-
-    val availableMonths = remember(allExpenses) {
-        val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-        allExpenses
-            .sortedByDescending { it.date }
-            .map { format.format(Date(it.date)) }
-            .distinct()
-    }
-
-    val filteredExpenses = remember(allExpenses, selectedMonth) {
-        if (selectedMonth == null) {
-            allExpenses
-        } else {
-            val format = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-            allExpenses.filter { format.format(Date(it.date)) == selectedMonth }
-        }
-    }
-    
-    // Calculate category totals
-    val categoryTotals = remember(filteredExpenses) {
-        Category.values().map { category ->
-            category to filteredExpenses.filter { it.category == category }.sumOf { it.amount }
-        }.filter { it.second > 0 }.sortedByDescending { it.second }
-    }
-    
-    val maxTotal = remember(categoryTotals) {
-        categoryTotals.maxOfOrNull { it.second } ?: 1.0
-    }
-
-    var animateBars by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        animateBars = true
-    }
+    var selectedTimeRange by remember { mutableStateOf(1) } // 0: Weekly, 1: Monthly, 2: Yearly
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Statistics", color = CreamText, style = MaterialTheme.typography.titleLarge) },
-                actions = {
-                    IconButton(onClick = { showMonthMenu = !showMonthMenu }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Filter by Month", tint = CreamText)
-                    }
-                    DropdownMenu(
-                        expanded = showMonthMenu,
-                        onDismissRequest = { showMonthMenu = false },
-                        modifier = Modifier.background(SurfaceDark)
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("All Months", color = CreamText) },
-                            onClick = {
-                                selectedMonth = null
-                                showMonthMenu = false
-                            }
-                        )
-                        availableMonths.forEach { month ->
-                            DropdownMenuItem(
-                                text = { Text(month, color = CreamText) },
-                                onClick = {
-                                    selectedMonth = month
-                                    showMonthMenu = false
-                                }
-                            )
-                        }
-                    }
+                title = { 
+                    Text(
+                        "AI Intelligence", 
+                        color = CreamText, 
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    ) 
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NearBlack)
             )
         },
         containerColor = NearBlack
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp)
+                .fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp, top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            Text(
-                text = "Spending Breakdown",
-                style = MaterialTheme.typography.titleMedium,
-                color = MutedCream,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-            
-            if (categoryTotals.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No data to display", color = MutedCream)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp)
-                ) {
-                    items(categoryTotals) { (category, total) ->
-                        val targetProgress = if (animateBars) (total / maxTotal).toFloat() else 0f
-                        val progress by animateFloatAsState(
-                            targetValue = targetProgress,
-                            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
-                        )
+            // Spending Trends
+            item { SpendingTrendsSection(selectedTimeRange) { selectedTimeRange = it } }
 
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = category.icon,
-                                        contentDescription = null,
-                                        tint = OliveAccent,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = category.displayName,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = CreamText
-                                    )
-                                }
-                                Text(
-                                    text = "₹${String.format("%.2f", total)}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = CreamText
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            Canvas(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(12.dp)
-                            ) {
-                                val progressBarWidth = size.width * progress
-                                drawRoundRect(
-                                    color = OliveDim.copy(alpha = 0.3f),
-                                    size = size,
-                                    cornerRadius = CornerRadius(6.dp.toPx())
-                                )
-                                drawRoundRect(
-                                    brush = Brush.linearGradient(listOf(TanAccent, BurntOrangeAccent)),
-                                    size = Size(width = progressBarWidth, height = size.height),
-                                    cornerRadius = CornerRadius(6.dp.toPx())
-                                )
-                            }
-                        }
-                    }
+            // AI Recommendations
+            item { AIRecommendationsSection() }
+
+            // Predictions
+            item { PredictionsSection() }
+
+            // Financial Health
+            item { FinancialHealthSection() }
+
+            // Reports
+            item { ReportsSection() }
+        }
+    }
+}
+
+@Composable
+fun SectionTitle(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = CreamText,
+        modifier = modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
+    )
+}
+
+@Composable
+fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> Unit) {
+    Column {
+        SectionTitle("Spending Trends")
+        
+        // Time Range Selector
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .background(SurfaceDark, RoundedCornerShape(12.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val ranges = listOf("Weekly", "Monthly", "Yearly")
+            ranges.forEachIndexed { index, label ->
+                val isSelected = selectedTimeRange == index
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) OliveDim else Color.Transparent)
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) CreamText else MutedCream,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+                    )
                 }
             }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Placeholder Chart
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(horizontal = 16.dp)
+                .background(SurfaceDark, RoundedCornerShape(16.dp))
+                .padding(16.dp)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val path = Path()
+                val steps = 6
+                val stepX = size.width / steps
+                
+                path.moveTo(0f, size.height * 0.8f)
+                path.cubicTo(stepX, size.height * 0.8f, stepX, size.height * 0.4f, stepX * 2, size.height * 0.5f)
+                path.cubicTo(stepX * 3, size.height * 0.6f, stepX * 3, size.height * 0.2f, stepX * 4, size.height * 0.3f)
+                path.cubicTo(stepX * 5, size.height * 0.4f, stepX * 5, size.height * 0.1f, size.width, size.height * 0.2f)
+                
+                drawPath(
+                    path = path,
+                    color = TanAccent,
+                    style = Stroke(width = 4.dp.toPx())
+                )
+                
+                // Draw some points
+                val points = listOf(
+                    Offset(0f, size.height * 0.8f),
+                    Offset(stepX * 2, size.height * 0.5f),
+                    Offset(stepX * 4, size.height * 0.3f),
+                    Offset(size.width, size.height * 0.2f)
+                )
+                
+                points.forEach { pt ->
+                    drawCircle(color = BurntOrangeAccent, radius = 6.dp.toPx(), center = pt)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AIRecommendationsSection() {
+    Column {
+        SectionTitle("AI Recommendations")
+        
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                RecommendationCard(
+                    icon = Icons.Default.Warning,
+                    iconTint = BurntOrangeAccent,
+                    message = "You spent 22% more on food this month",
+                    actionText = "Review"
+                )
+            }
+            item {
+                RecommendationCard(
+                    icon = Icons.Default.Star,
+                    iconTint = TanAccent,
+                    message = "You may save ₹3,000 by reducing subscriptions",
+                    actionText = "View Subs"
+                )
+            }
+            item {
+                RecommendationCard(
+                    icon = Icons.Default.Info,
+                    iconTint = OliveAccent,
+                    message = "Weekend spending spikes detected",
+                    actionText = "Analyze"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecommendationCard(icon: ImageVector, iconTint: Color, message: String, actionText: String) {
+    Box(
+        modifier = Modifier
+            .width(220.dp)
+            .background(SurfaceDark, RoundedCornerShape(16.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = message,
+                color = CreamText,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.height(60.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = actionText,
+                color = OliveAccent,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun PredictionsSection() {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        SectionTitle("Predictions", modifier = Modifier.padding(horizontal = 0.dp))
+        
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            PredictionItem("Expected end-of-month balance", "₹45,200", Icons.Default.AccountBalanceWallet)
+            PredictionItem("Forecasted spending", "₹12,500", Icons.Default.TrendingUp)
+            PredictionItem("Upcoming expense prediction", "₹4,000", Icons.Default.Event)
+            PredictionItem("Cash-flow risk alerts", "Low Risk", Icons.Default.VerifiedUser, tint = OliveAccent)
+        }
+    }
+}
+
+@Composable
+fun PredictionItem(title: String, value: String, icon: ImageVector, tint: Color = MutedCream) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SurfaceDark, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(NearBlack, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(title, color = CreamText, style = MaterialTheme.typography.bodyMedium)
+        }
+        Text(value, color = CreamText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun FinancialHealthSection() {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        SectionTitle("Financial Health", modifier = Modifier.padding(horizontal = 0.dp))
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.linearGradient(listOf(SurfaceDark, OliveDim.copy(alpha = 0.2f))), RoundedCornerShape(24.dp))
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier.size(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawArc(
+                            color = SurfaceDark,
+                            startAngle = 135f,
+                            sweepAngle = 270f,
+                            useCenter = false,
+                            style = Stroke(width = 12.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                        )
+                        drawArc(
+                            brush = Brush.linearGradient(listOf(OliveAccent, TanAccent)),
+                            startAngle = 135f,
+                            sweepAngle = 270f * 0.85f,
+                            useCenter = false,
+                            style = Stroke(width = 12.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("85", color = CreamText, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                        Text("Excellent", color = OliveAccent, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                    HealthComponent("Saving Ratio", "35%", Icons.Default.Savings)
+                    HealthComponent("Debt Ratio", "12%", Icons.Default.MoneyOff)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                    HealthComponent("Budget Discipline", "High", Icons.Default.TrackChanges)
+                    HealthComponent("Recurring Burden", "Low", Icons.Default.Loop)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HealthComponent(label: String, value: String, icon: ImageVector) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(120.dp)) {
+        Icon(icon, contentDescription = null, tint = MutedCream, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(value, color = CreamText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(label, color = MutedCream, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+fun ReportsSection() {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        SectionTitle("Reports", modifier = Modifier.padding(horizontal = 0.dp))
+        
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ReportCard(Modifier.weight(1f), "Weekly\nReport", Icons.Default.InsertChart)
+            ReportCard(Modifier.weight(1f), "Monthly\nSummary", Icons.Default.PieChart)
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ReportCard(Modifier.weight(1f), "AI-Generated\nPDF", Icons.Default.PictureAsPdf)
+            ReportCard(Modifier.weight(1f), "Export\nCSV", Icons.Default.FileDownload)
+        }
+    }
+}
+
+@Composable
+fun ReportCard(modifier: Modifier, title: String, icon: ImageVector) {
+    Box(
+        modifier = modifier
+            .background(SurfaceDark, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(NearBlack, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = CreamText, modifier = Modifier.size(18.dp))
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(title, color = CreamText, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
