@@ -30,21 +30,21 @@ fun AddScreen(
     viewModel: AppViewModel,
     onDismiss: () -> Unit
 ) {
-    var showMainSheet by remember { mutableStateOf(true) }
-    var showAddExpenseSheet by remember { mutableStateOf(false) }
+    // var showMainSheet by remember { mutableStateOf(true) }
+    var showAddExpenseSheet by remember { mutableStateOf(true) }
 
-    if (showMainSheet) {
-        AddBottomSheet(
-            onDismiss = {
-                showMainSheet = false
-                onDismiss()
-            },
-            onAddExpenseClick = {
-                showMainSheet = false
-                showAddExpenseSheet = true
-            }
-        )
-    }
+    // if (showMainSheet) {
+    //     AddBottomSheet(
+    //         onDismiss = {
+    //             showMainSheet = false
+    //             onDismiss()
+    //         },
+    //         onAddExpenseClick = {
+    //             showMainSheet = false
+    //             showAddExpenseSheet = true
+    //         }
+    //     )
+    // }
 
     if (showAddExpenseSheet) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
