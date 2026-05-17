@@ -151,10 +151,10 @@ fun HeaderSection() {
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconButton(onClick = { /* Mock */ }) {
-                Icon(Icons.Default.Search, contentDescription = "Search", tint = CreamText)
+                Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = CreamText)
             }
             IconButton(onClick = { /* Mock */ }) {
-                Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = CreamText)
+                Icon(Icons.Default.Search, contentDescription = "Search", tint = CreamText)
             }
         }
     }
