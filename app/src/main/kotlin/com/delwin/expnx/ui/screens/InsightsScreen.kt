@@ -283,6 +283,15 @@ fun FinancialHealthSection() {
                     contentAlignment = Alignment.Center
                 ) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
+                        // Outline for the remaining portion
+                        drawArc(
+                            color = NearBlack,
+                            startAngle = 135f,
+                            sweepAngle = 270f,
+                            useCenter = false,
+                            style = Stroke(width = 14.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                        )
+                        // Inner track
                         drawArc(
                             color = SurfaceDark,
                             startAngle = 135f,
@@ -290,6 +299,7 @@ fun FinancialHealthSection() {
                             useCenter = false,
                             style = Stroke(width = 12.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
                         )
+                        // Progress
                         drawArc(
                             brush = Brush.linearGradient(listOf(OliveAccent, TanAccent)),
                             startAngle = 135f,
