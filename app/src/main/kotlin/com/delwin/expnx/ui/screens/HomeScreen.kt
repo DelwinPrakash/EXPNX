@@ -136,10 +136,19 @@ fun HeaderSection() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(text = "Good morning,", style = MaterialTheme.typography.bodyMedium, color = MutedCream)
-            Text(text = "Delwin", style = MaterialTheme.typography.headlineSmall, color = CreamText, fontWeight = FontWeight.Bold)
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val greeting = when (currentHour) {
+            in 0..11 -> "Good morning,"
+            in 12..16 -> "Good afternoon,"
+            else -> "Good evening,"
         }
+        
+        Text(
+            text = greeting,
+            style = MaterialTheme.typography.headlineSmall,
+            color = CreamText,
+            fontWeight = FontWeight.Bold
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconButton(onClick = { /* Mock */ }) {
                 Icon(Icons.Default.Search, contentDescription = "Search", tint = CreamText)
