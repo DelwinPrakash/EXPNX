@@ -49,7 +49,7 @@ fun ActivityScreen(viewModel: AppViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .background(SurfaceDark)
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -59,10 +59,10 @@ fun ActivityScreen(viewModel: AppViewModel) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(if (isSelected) BurntOrangeAccent else Color.Transparent)
                             .clickable { selectedTab = tab }
-                            .padding(vertical = 10.dp),
+                            .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
