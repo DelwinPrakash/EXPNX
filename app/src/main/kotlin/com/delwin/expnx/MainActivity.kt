@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -71,7 +72,11 @@ class MainActivity : ComponentActivity() {
                                             enter = fadeIn() + expandVertically(),
                                             exit = fadeOut() + shrinkVertically()
                                         ) {
-                                            Text(screen.title)
+                                            Text(
+                                                text = screen.title,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     },
                                     selected = selected,
