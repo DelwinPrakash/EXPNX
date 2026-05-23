@@ -1,26 +1,121 @@
 package com.delwin.expnx.ui.screens.plans
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delwin.expnx.ui.theme.*
 
+enum class BillCategory(val displayName: String) {
+    THIS_WEEK("This Week"),
+    LATER_THIS_MONTH("Later this Month")
+}
+
+data class Bill(
+    val title: String,
+    val provider: String,
+    val icon: ImageVector,
+    val amount: Double,
+    val dueDate: String,
+    val isPaid: Boolean,
+    val autoPay: Boolean,
+    val category: BillCategory = BillCategory.THIS_WEEK
+)
+
 @Composable
 fun BillsTab() {
     val scrollState = rememberScrollState()
+    var showAddBillDialog by remember { mutableStateOf(false) }
+
+    val billsList = remember {
+        mutableStateListOf(
+            Bill(
+                title = "Electricity Bill",
+                provider = "BESCOM",
+                icon = Icons.Default.Bolt,
+                amount = 1250.0,
+                dueDate = "Tomorrow",
+                isPaid = false,
+                autoPay = true,
+                category = BillCategory.THIS_WEEK
+            ),
+            Bill(
+                title = "Internet",
+                provider = "JioFiber",
+                icon = Icons.Default.Wifi,
+                amount = 999.0,
+                dueDate = "In 3 Days",
+                isPaid = false,
+                autoPay = true,
+                category = BillCategory.THIS_WEEK
+            ),
+            Bill(
+                title = "Car EMI",
+                provider = "HDFC Bank",
+                icon = Icons.Default.DirectionsCar,
+                amount = 8500.0,
+                dueDate = "May 25",
+                isPaid = false,
+                autoPay = false,
+                category = BillCategory.LATER_THIS_MONTH
+            ),
+            Bill(
+                title = "Gym Membership",
+                provider = "Cult.fit",
+                icon = Icons.Default.FitnessCenter,
+                amount = 1700.0,
+                dueDate = "May 28",
+                isPaid = false,
+                autoPay = false,
+                category = BillCategory.LATER_THIS_MONTH
+            ),
+            Bill(
+                title = "Netflix",
+                provider = "Streaming",
+                icon = Icons.Default.LiveTv,
+                amount = 649.0,
+                dueDate = "May 02",
+                isPaid = true,
+                autoPay = true,
+                category = BillCategory.LATER_THIS_MONTH
+            )
+        )
+    }
+
+    val availableIcons = listOf(
+        Icons.Default.Bolt,
+        Icons.Default.Wifi,
+        Icons.Default.DirectionsCar,
+        Icons.Default.FitnessCenter,
+        Icons.Default.LiveTv,
+        Icons.Default.Receipt,
+        Icons.Default.CreditCard,
+        Icons.Default.Smartphone,
+        Icons.Default.Home
+    )
+
+    // Dynamic summary calculations
+    val upcomingAmount = billsList.filter { !it.isPaid }.sumOf { it.amount }
+    val overdueAmount = billsList.filter { !it.isPaid && it.dueDate.equals("Overdue", ignoreCase = true) }.sumOf { it.amount }
 
     Column(
         modifier = Modifier
@@ -36,80 +131,376 @@ fun BillsTab() {
         ) {
             SummaryCard(
                 title = "Upcoming",
-                amount = "₹12,450",
+                amount = "₹${String.format("%.0f", upcomingAmount)}",
                 icon = Icons.Default.Event,
                 color = OliveAccent,
                 modifier = Modifier.weight(1f)
             )
             SummaryCard(
                 title = "Overdue",
-                amount = "₹0",
+                amount = "₹${String.format("%.0f", overdueAmount)}",
                 icon = Icons.Default.Warning,
                 color = RedReveal,
                 modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("This Week", color = CreamText, style = MaterialTheme.typography.titleMedium)
+        // Section Title & Add Bill Option
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Bills & Subscriptions", color = CreamText, style = MaterialTheme.typography.titleMedium)
+            IconButton(
+                onClick = { showAddBillDialog = true },
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = OliveAccent,
+                    contentColor = NearBlack
+                ),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Bill",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
 
-        BillCard(
-            title = "Electricity Bill",
-            provider = "BESCOM",
-            icon = Icons.Default.Bolt,
-            amount = 1250.0,
-            dueDate = "Tomorrow",
-            isPaid = false,
-            autoPay = true
-        )
+        // This Week Section (Unpaid)
+        val thisWeekBills = billsList.filter { it.category == BillCategory.THIS_WEEK && !it.isPaid }
+        if (thisWeekBills.isNotEmpty()) {
+            Text("This Week", color = CreamText, style = MaterialTheme.typography.titleSmall)
+            thisWeekBills.forEach { bill ->
+                BillCard(
+                    title = bill.title,
+                    provider = bill.provider,
+                    icon = bill.icon,
+                    amount = bill.amount,
+                    dueDate = bill.dueDate,
+                    isPaid = bill.isPaid,
+                    autoPay = bill.autoPay,
+                    onClick = {
+                        val idx = billsList.indexOf(bill)
+                        if (idx != -1) {
+                            billsList[idx] = bill.copy(isPaid = !bill.isPaid)
+                        }
+                    }
+                )
+            }
+        }
 
-        BillCard(
-            title = "Internet",
-            provider = "JioFiber",
-            icon = Icons.Default.Wifi,
-            amount = 999.0,
-            dueDate = "In 3 Days",
-            isPaid = false,
-            autoPay = true
-        )
+        // Later this Month Section (Unpaid)
+        val laterThisMonthBills = billsList.filter { it.category == BillCategory.LATER_THIS_MONTH && !it.isPaid }
+        if (laterThisMonthBills.isNotEmpty()) {
+            Text("Later this Month", color = CreamText, style = MaterialTheme.typography.titleSmall)
+            laterThisMonthBills.forEach { bill ->
+                BillCard(
+                    title = bill.title,
+                    provider = bill.provider,
+                    icon = bill.icon,
+                    amount = bill.amount,
+                    dueDate = bill.dueDate,
+                    isPaid = bill.isPaid,
+                    autoPay = bill.autoPay,
+                    onClick = {
+                        val idx = billsList.indexOf(bill)
+                        if (idx != -1) {
+                            billsList[idx] = bill.copy(isPaid = !bill.isPaid)
+                        }
+                    }
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Later this Month", color = CreamText, style = MaterialTheme.typography.titleMedium)
-
-        BillCard(
-            title = "Car EMI",
-            provider = "HDFC Bank",
-            icon = Icons.Default.DirectionsCar,
-            amount = 8500.0,
-            dueDate = "May 25",
-            isPaid = false,
-            autoPay = false
-        )
-
-        BillCard(
-            title = "Gym Membership",
-            provider = "Cult.fit",
-            icon = Icons.Default.FitnessCenter,
-            amount = 1700.0,
-            dueDate = "May 28",
-            isPaid = false,
-            autoPay = false
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Paid", color = MutedCream, style = MaterialTheme.typography.titleMedium)
-
-        BillCard(
-            title = "Netflix",
-            provider = "Streaming",
-            icon = Icons.Default.LiveTv,
-            amount = 649.0,
-            dueDate = "May 02",
-            isPaid = true,
-            autoPay = true
-        )
+        // Paid Section
+        val paidBills = billsList.filter { it.isPaid }
+        if (paidBills.isNotEmpty()) {
+            Text("Paid", color = MutedCream, style = MaterialTheme.typography.titleSmall)
+            paidBills.forEach { bill ->
+                BillCard(
+                    title = bill.title,
+                    provider = bill.provider,
+                    icon = bill.icon,
+                    amount = bill.amount,
+                    dueDate = bill.dueDate,
+                    isPaid = bill.isPaid,
+                    autoPay = bill.autoPay,
+                    onClick = {
+                        val idx = billsList.indexOf(bill)
+                        if (idx != -1) {
+                            billsList[idx] = bill.copy(isPaid = !bill.isPaid)
+                        }
+                    }
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(80.dp))
+    }
+
+    if (showAddBillDialog) {
+        var title by remember { mutableStateOf("") }
+        var provider by remember { mutableStateOf("") }
+        var amount by remember { mutableStateOf("") }
+        var dueDate by remember { mutableStateOf("") }
+        var autoPay by remember { mutableStateOf(false) }
+        var isPaid by remember { mutableStateOf(false) }
+        var category by remember { mutableStateOf(BillCategory.THIS_WEEK) }
+        var selectedIcon by remember { mutableStateOf(availableIcons[0]) }
+
+        AlertDialog(
+            onDismissRequest = { showAddBillDialog = false },
+            title = {
+                Text("Add New Bill", color = CreamText, fontWeight = FontWeight.Bold)
+            },
+            containerColor = SurfaceDark,
+            textContentColor = CreamText,
+            text = {
+                val dialogScrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(dialogScrollState),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Select Icon", color = MutedCream, style = MaterialTheme.typography.bodySmall)
+                    val iconScrollState = rememberScrollState()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(iconScrollState),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        availableIcons.forEach { icon ->
+                            val isSelected = selectedIcon == icon
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) OliveAccent else GlassSurface)
+                                    .clickable { selectedIcon = icon }
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) NearBlack else CreamText,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = {
+                            Text(
+                                text = "Bill Name",
+                                color = MutedCream,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CreamText,
+                            unfocusedTextColor = CreamText,
+                            focusedBorderColor = OliveAccent,
+                            unfocusedBorderColor = GlassBorder,
+                            focusedLabelColor = OliveAccent,
+                            unfocusedLabelColor = MutedCream
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = provider,
+                        onValueChange = { provider = it },
+                        label = {
+                            Text(
+                                text = "Provider (e.g. BESCOM)",
+                                color = MutedCream,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CreamText,
+                            unfocusedTextColor = CreamText,
+                            focusedBorderColor = OliveAccent,
+                            unfocusedBorderColor = GlassBorder,
+                            focusedLabelColor = OliveAccent,
+                            unfocusedLabelColor = MutedCream
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = { amount = it },
+                        label = {
+                            Text(
+                                text = "Amount (₹)",
+                                color = MutedCream,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CreamText,
+                            unfocusedTextColor = CreamText,
+                            focusedBorderColor = OliveAccent,
+                            unfocusedBorderColor = GlassBorder,
+                            focusedLabelColor = OliveAccent,
+                            unfocusedLabelColor = MutedCream
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = dueDate,
+                        onValueChange = { dueDate = it },
+                        label = {
+                            Text(
+                                text = "Due Date (e.g. Tomorrow, May 25)",
+                                color = MutedCream,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CreamText,
+                            unfocusedTextColor = CreamText,
+                            focusedBorderColor = OliveAccent,
+                            unfocusedBorderColor = GlassBorder,
+                            focusedLabelColor = OliveAccent,
+                            unfocusedLabelColor = MutedCream
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text("Due Period", color = MutedCream, style = MaterialTheme.typography.bodySmall)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        BillCategory.values().forEach { cat ->
+                            val isSelected = category == cat
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) OliveAccent else GlassSurface)
+                                    .clickable { category = cat }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = cat.displayName,
+                                    color = if (isSelected) NearBlack else CreamText,
+                                    fontWeight = FontWeight.Medium,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("AutoPay Enabled", color = CreamText, style = MaterialTheme.typography.bodyMedium)
+                        Switch(
+                            checked = autoPay,
+                            onCheckedChange = { autoPay = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = NearBlack,
+                                checkedTrackColor = OliveAccent,
+                                uncheckedThumbColor = MutedCream,
+                                uncheckedTrackColor = GlassSurface
+                            )
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Mark as Paid", color = CreamText, style = MaterialTheme.typography.bodyMedium)
+                        Switch(
+                            checked = isPaid,
+                            onCheckedChange = { isPaid = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = NearBlack,
+                                checkedTrackColor = OliveAccent,
+                                uncheckedThumbColor = MutedCream,
+                                uncheckedTrackColor = GlassSurface
+                            )
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (title.isNotBlank() && amount.toDoubleOrNull() != null) {
+                            billsList.add(
+                                Bill(
+                                    title = title,
+                                    provider = provider.ifBlank { "Unknown" },
+                                    icon = selectedIcon,
+                                    amount = amount.toDoubleOrNull() ?: 0.0,
+                                    dueDate = dueDate.ifBlank { "TBD" },
+                                    isPaid = isPaid,
+                                    autoPay = autoPay,
+                                    category = category
+                                )
+                            )
+                            showAddBillDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = OliveAccent)
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showAddBillDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MutedCream)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -149,10 +540,13 @@ fun BillCard(
     amount: Double,
     dueDate: String,
     isPaid: Boolean,
-    autoPay: Boolean
+    autoPay: Boolean,
+    onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (isPaid) Color.Transparent else SurfaceDark
         ),
