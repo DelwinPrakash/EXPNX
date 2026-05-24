@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -251,256 +253,219 @@ fun BillsTab() {
         var isPaid by remember { mutableStateOf(false) }
         var category by remember { mutableStateOf(BillCategory.THIS_WEEK) }
         var selectedIcon by remember { mutableStateOf(availableIcons[0]) }
+        val iconScrollState = rememberScrollState()
 
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showAddBillDialog = false },
-            title = {
-                Text("Add New Bill", color = CreamText, fontWeight = FontWeight.Bold)
-            },
-            containerColor = SurfaceDark,
-            textContentColor = CreamText,
-            text = {
-                val dialogScrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(dialogScrollState),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text("Select Icon", color = MutedCream, style = MaterialTheme.typography.bodySmall)
-                    val iconScrollState = rememberScrollState()
-                    Row(
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .fillMaxHeight(0.85f),
+                shape = RoundedCornerShape(20.dp),
+                color = SurfaceDark
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    
+                    // Fixed header — never scrolls
+                    Text(
+                        "Add New Bill",
+                        color = CreamText,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 8.dp)
+                    )
+
+                    // Scrollable content in the middle
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(iconScrollState),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        availableIcons.forEach { icon ->
-                            val isSelected = selectedIcon == icon
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) OliveAccent else GlassSurface)
-                                    .clickable { selectedIcon = icon }
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = if (isSelected) NearBlack else CreamText,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text("Select Icon", color = MutedCream, style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(iconScrollState),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            availableIcons.forEach { icon ->
+                                val isSelected = selectedIcon == icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) OliveAccent else GlassSurface)
+                                        .clickable { selectedIcon = icon }
+                                        .padding(8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) NearBlack else CreamText,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = {
-                            Text(
-                                text = "Bill Name",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = { title = it },
+                            label = { Text("Bill Name", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    OutlinedTextField(
-                        value = provider,
-                        onValueChange = { provider = it },
-                        label = {
-                            Text(
-                                text = "Provider (e.g. BESCOM)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = provider,
+                            onValueChange = { provider = it },
+                            label = { Text("Provider (e.g. BESCOM)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    OutlinedTextField(
-                        value = amount,
-                        onValueChange = { amount = it },
-                        label = {
-                            Text(
-                                text = "Amount (₹)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = amount,
+                            onValueChange = { amount = it },
+                            label = { Text("Amount (₹)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    OutlinedTextField(
-                        value = dueDate,
-                        onValueChange = { dueDate = it },
-                        label = {
-                            Text(
-                                text = "Due Date (e.g. Tomorrow, May 25)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = dueDate,
+                            onValueChange = { dueDate = it },
+                            label = { Text("Due Date (e.g. Tomorrow, May 25)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    Text("Due Period", color = MutedCream, style = MaterialTheme.typography.bodySmall)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        BillCategory.values().forEach { cat ->
-                            val isSelected = category == cat
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) OliveAccent else GlassSurface)
-                                    .clickable { category = cat }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = cat.displayName,
-                                    color = if (isSelected) NearBlack else CreamText,
-                                    fontWeight = FontWeight.Medium,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                        Text("Due Period", color = MutedCream, style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BillCategory.values().forEach { cat ->
+                                val isSelected = category == cat
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) OliveAccent else GlassSurface)
+                                        .clickable { category = cat }
+                                        .padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = cat.displayName,
+                                        color = if (isSelected) NearBlack else CreamText,
+                                        fontWeight = FontWeight.Medium,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("AutoPay Enabled", color = CreamText, style = MaterialTheme.typography.bodyMedium)
-                        Switch(
-                            checked = autoPay,
-                            onCheckedChange = { autoPay = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = NearBlack,
-                                checkedTrackColor = OliveAccent,
-                                uncheckedThumbColor = MutedCream,
-                                uncheckedTrackColor = GlassSurface
-                            )
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Mark as Paid", color = CreamText, style = MaterialTheme.typography.bodyMedium)
-                        Switch(
-                            checked = isPaid,
-                            onCheckedChange = { isPaid = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = NearBlack,
-                                checkedTrackColor = OliveAccent,
-                                uncheckedThumbColor = MutedCream,
-                                uncheckedTrackColor = GlassSurface
-                            )
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (title.isNotBlank() && amount.toDoubleOrNull() != null) {
-                            billsList.add(
-                                Bill(
-                                    title = title,
-                                    provider = provider.ifBlank { "Unknown" },
-                                    icon = selectedIcon,
-                                    amount = amount.toDoubleOrNull() ?: 0.0,
-                                    dueDate = dueDate.ifBlank { "TBD" },
-                                    isPaid = isPaid,
-                                    autoPay = autoPay,
-                                    category = category
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("AutoPay Enabled", color = CreamText, style = MaterialTheme.typography.bodyMedium)
+                            Switch(
+                                checked = autoPay, onCheckedChange = { autoPay = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = NearBlack, checkedTrackColor = OliveAccent,
+                                    uncheckedThumbColor = MutedCream, uncheckedTrackColor = GlassSurface
                                 )
                             )
-                            showAddBillDialog = false
                         }
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = OliveAccent)
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showAddBillDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MutedCream)
-                ) {
-                    Text("Cancel")
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Mark as Paid", color = CreamText, style = MaterialTheme.typography.bodyMedium)
+                            Switch(
+                                checked = isPaid, onCheckedChange = { isPaid = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = NearBlack, checkedTrackColor = OliveAccent,
+                                    uncheckedThumbColor = MutedCream, uncheckedTrackColor = GlassSurface
+                                )
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Fixed buttons at bottom — never scrolls
+                    HorizontalDivider(color = GlassBorder)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = { showAddBillDialog = false },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MutedCream)
+                        ) { Text("Cancel") }
+                        TextButton(
+                            onClick = {
+                                if (title.isNotBlank() && amount.toDoubleOrNull() != null) {
+                                    billsList.add(
+                                        Bill(
+                                            title = title,
+                                            provider = provider.ifBlank { "Unknown" },
+                                            icon = selectedIcon,
+                                            amount = amount.toDoubleOrNull() ?: 0.0,
+                                            dueDate = dueDate.ifBlank { "TBD" },
+                                            isPaid = isPaid,
+                                            autoPay = autoPay,
+                                            category = category
+                                        )
+                                    )
+                                    showAddBillDialog = false
+                                }
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = OliveAccent)
+                        ) { Text("Add") }
+                    }
                 }
             }
-        )
+        }
     }
 }
 

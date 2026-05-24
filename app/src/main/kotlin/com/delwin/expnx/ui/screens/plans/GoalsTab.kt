@@ -13,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -131,214 +133,172 @@ fun GoalsTab() {
         var predictedDate by remember { mutableStateOf("") }
         var monthlySuggestion by remember { mutableStateOf("") }
         var selectedIcon by remember { mutableStateOf(availableIcons[0]) }
+        val iconScrollState = rememberScrollState()
 
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showAddGoalDialog = false },
-            title = {
-                Text("Add New Goal", color = CreamText, fontWeight = FontWeight.Bold)
-            },
-            containerColor = SurfaceDark,
-            textContentColor = CreamText,
-            text = {
-                val dialogScrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(dialogScrollState),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text("Select Icon", color = MutedCream, style = MaterialTheme.typography.bodySmall)
-                    val iconScrollState = rememberScrollState()
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .fillMaxHeight(0.85f),
+                shape = RoundedCornerShape(20.dp),
+                color = SurfaceDark
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+
+                    // Fixed header
+                    Text(
+                        "Add New Goal",
+                        color = CreamText,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 8.dp)
+                    )
+
+                    // Scrollable content
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text("Select Icon", color = MutedCream, style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(iconScrollState),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            availableIcons.forEach { icon ->
+                                val isSelected = selectedIcon == icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) OliveAccent else GlassSurface)
+                                        .clickable { selectedIcon = icon }
+                                        .padding(8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) NearBlack else CreamText,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = { title = it },
+                            label = { Text("Goal Name", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = targetAmount,
+                            onValueChange = { targetAmount = it },
+                            label = { Text("Target Amount (₹)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = savedAmount,
+                            onValueChange = { savedAmount = it },
+                            label = { Text("Already Saved (₹)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = predictedDate,
+                            onValueChange = { predictedDate = it },
+                            label = { Text("Target Date (e.g. Oct 2026)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = monthlySuggestion,
+                            onValueChange = { monthlySuggestion = it },
+                            label = { Text("Suggested Monthly Contribution (₹)", color = MutedCream, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = CreamText, unfocusedTextColor = CreamText,
+                                focusedBorderColor = OliveAccent, unfocusedBorderColor = GlassBorder,
+                                focusedLabelColor = OliveAccent, unfocusedLabelColor = MutedCream
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Fixed buttons at bottom
+                    HorizontalDivider(color = GlassBorder)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(iconScrollState),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        availableIcons.forEach { icon ->
-                            val isSelected = selectedIcon == icon
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) OliveAccent else GlassSurface)
-                                    .clickable { selectedIcon = icon }
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = if (isSelected) NearBlack else CreamText,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
+                        TextButton(
+                            onClick = { showAddGoalDialog = false },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MutedCream)
+                        ) { Text("Cancel") }
+                        TextButton(
+                            onClick = {
+                                if (title.isNotBlank() && targetAmount.toDoubleOrNull() != null) {
+                                    goalsList.add(
+                                        Goal(
+                                            title = title,
+                                            icon = selectedIcon,
+                                            targetAmount = targetAmount.toDoubleOrNull() ?: 0.0,
+                                            savedAmount = savedAmount.toDoubleOrNull() ?: 0.0,
+                                            predictedDate = predictedDate.ifBlank { "TBD" },
+                                            monthlySuggestion = monthlySuggestion.toDoubleOrNull() ?: 0.0
+                                        )
+                                    )
+                                    showAddGoalDialog = false
+                                }
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = OliveAccent)
+                        ) { Text("Add") }
                     }
-
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = {
-                            Text(
-                                text = "Goal Name",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = targetAmount,
-                        onValueChange = { targetAmount = it },
-                        label = {
-                            Text(
-                                text = "Target Amount (₹)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = savedAmount,
-                        onValueChange = { savedAmount = it },
-                        label = {
-                            Text(
-                                text = "Already Saved (₹)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = predictedDate,
-                        onValueChange = { predictedDate = it },
-                        label = {
-                            Text(
-                                text = "Target Date (e.g. Oct 2026)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = monthlySuggestion,
-                        onValueChange = { monthlySuggestion = it },
-                        label = {
-                            Text(
-                                text = "Suggested Monthly Contribution (₹)",
-                                color = MutedCream,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = CreamText,
-                            unfocusedTextColor = CreamText,
-                            focusedBorderColor = OliveAccent,
-                            unfocusedBorderColor = GlassBorder,
-                            focusedLabelColor = OliveAccent,
-                            unfocusedLabelColor = MutedCream
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (title.isNotBlank() && targetAmount.toDoubleOrNull() != null) {
-                            goalsList.add(
-                                Goal(
-                                    title = title,
-                                    icon = selectedIcon,
-                                    targetAmount = targetAmount.toDoubleOrNull() ?: 0.0,
-                                    savedAmount = savedAmount.toDoubleOrNull() ?: 0.0,
-                                    predictedDate = predictedDate.ifBlank { "TBD" },
-                                    monthlySuggestion = monthlySuggestion.toDoubleOrNull() ?: 0.0
-                                )
-                            )
-                            showAddGoalDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = OliveAccent)
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showAddGoalDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MutedCream)
-                ) {
-                    Text("Cancel")
                 }
             }
-        )
+        }
     }
 }
 
