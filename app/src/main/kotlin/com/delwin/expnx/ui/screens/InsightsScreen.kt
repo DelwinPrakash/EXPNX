@@ -2,6 +2,7 @@ package com.delwin.expnx.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -104,6 +105,7 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
                         .background(if (isSelected) OliveDim else Color.Transparent)
+                        .clickable { onTimeRangeSelected(index) }
                         .padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -134,23 +136,46 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
                 val steps = 6
                 val stepX = size.width / steps
                 
-                path.moveTo(0f, size.height * 0.8f)
-                path.cubicTo(stepX, size.height * 0.8f, stepX, size.height * 0.4f, stepX * 2, size.height * 0.5f)
-                path.cubicTo(stepX * 3, size.height * 0.6f, stepX * 3, size.height * 0.2f, stepX * 4, size.height * 0.3f)
-                path.cubicTo(stepX * 5, size.height * 0.4f, stepX * 5, size.height * 0.1f, size.width, size.height * 0.2f)
+                val points = when (selectedTimeRange) {
+                    0 -> listOf( // Weekly - Spike at weekends
+                        Offset(0f, size.height * 0.7f),
+                        Offset(stepX * 1.5f, size.height * 0.75f),
+                        Offset(stepX * 3.5f, size.height * 0.3f), // Weekend spike
+                        Offset(stepX * 5f, size.height * 0.8f),
+                        Offset(size.width, size.height * 0.6f)
+                    )
+                    2 -> listOf( // Yearly - Holiday season peak
+                        Offset(0f, size.height * 0.5f),
+                        Offset(stepX * 2f, size.height * 0.6f),
+                        Offset(stepX * 4f, size.height * 0.7f),
+                        Offset(size.width, size.height * 0.2f)
+                    )
+                    else -> listOf( // Monthly (Default)
+                        Offset(0f, size.height * 0.8f),
+                        Offset(stepX * 2f, size.height * 0.5f),
+                        Offset(stepX * 4f, size.height * 0.3f),
+                        Offset(size.width, size.height * 0.2f)
+                    )
+                }
+
+                if (points.isNotEmpty()) {
+                    path.moveTo(points[0].x, points[0].y)
+                    for (i in 1 until points.size) {
+                        val prevPt = points[i - 1]
+                        val currPt = points[i]
+                        val controlX = (prevPt.x + currPt.x) / 2
+                        path.cubicTo(
+                            controlX, prevPt.y,
+                            controlX, currPt.y,
+                            currPt.x, currPt.y
+                        )
+                    }
+                }
                 
                 drawPath(
                     path = path,
                     color = TanAccent,
                     style = Stroke(width = 4.dp.toPx())
-                )
-                
-                // Draw some points
-                val points = listOf(
-                    Offset(0f, size.height * 0.8f),
-                    Offset(stepX * 2, size.height * 0.5f),
-                    Offset(stepX * 4, size.height * 0.3f),
-                    Offset(size.width, size.height * 0.2f)
                 )
                 
                 points.forEach { pt ->
