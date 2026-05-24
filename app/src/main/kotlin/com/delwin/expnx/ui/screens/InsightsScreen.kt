@@ -373,14 +373,14 @@ fun ReportsSection() {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         SectionTitle("Reports", modifier = Modifier.padding(horizontal = 0.dp))
         
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ReportCard(Modifier.weight(1f), "Weekly\nReport", Icons.Default.InsertChart)
-            ReportCard(Modifier.weight(1f), "Monthly\nSummary", Icons.Default.PieChart)
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Weekly\nReport", Icons.Default.InsertChart)
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Monthly\nSummary", Icons.Default.PieChart)
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ReportCard(Modifier.weight(1f), "AI-Generated\nPDF", Icons.Default.PictureAsPdf)
-            ReportCard(Modifier.weight(1f), "Export\nCSV", Icons.Default.FileDownload)
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "AI-Generated\nPDF", Icons.Default.PictureAsPdf)
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Export\nCSV", Icons.Default.FileDownload)
         }
     }
 }
@@ -393,7 +393,10 @@ fun ReportCard(modifier: Modifier, title: String, icon: ImageVector) {
             .padding(16.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -403,7 +406,14 @@ fun ReportCard(modifier: Modifier, title: String, icon: ImageVector) {
                 Icon(icon, contentDescription = null, tint = CreamText, modifier = Modifier.size(18.dp))
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Text(title, color = CreamText, style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = title,
+                color = CreamText,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
