@@ -41,14 +41,57 @@ fun TransactionsSubtab(viewModel: AppViewModel) {
     val scope = rememberCoroutineScope()
     
     // Smart Filters State
-    var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedFilter by remember { mutableStateOf("All") }
-    val filters = listOf("All", "Date", "Category", "Payment method", "Amount range", "Tags", "Merchant")
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var selectedDateRange by remember { mutableStateOf("All time") }
+    var selectedAmountRange by remember { mutableStateOf("All amounts") }
+    val filters = listOf("All", "Date", "Category", "Amount range")
 
     // Filtered Expenses
-    val filteredExpenses = remember(allExpenses, selectedCategory) {
+    val filteredExpenses = remember(allExpenses, selectedFilter, selectedCategory, selectedDateRange, selectedAmountRange) {
+        val now = System.currentTimeMillis()
+        val oneDayMillis = 24 * 60 * 60 * 1000L
+        val oneWeekMillis = 7 * oneDayMillis
+
         allExpenses.filter { expense ->
-            selectedCategory == null || expense.category == selectedCategory
+            val matchesCategory = when (selectedFilter) {
+                "Category" -> selectedCategory == null || expense.category == selectedCategory
+                else -> true
+            }
+
+            val matchesDate = when (selectedFilter) {
+                "Date" -> {
+                    when (selectedDateRange) {
+                        "Today" -> {
+                            val sdf = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                            sdf.format(Date(expense.date)) == sdf.format(Date(now))
+                        }
+                        "This Week" -> {
+                            expense.date >= now - oneWeekMillis
+                        }
+                        "This Month" -> {
+                            val sdf = SimpleDateFormat("yyyyMM", Locale.getDefault())
+                            sdf.format(Date(expense.date)) == sdf.format(Date(now))
+                        }
+                        else -> true
+                    }
+                }
+                else -> true
+            }
+
+            val matchesAmount = when (selectedFilter) {
+                "Amount range" -> {
+                    when (selectedAmountRange) {
+                        "Under ₹500" -> expense.amount < 500.0
+                        "₹500 - ₹2,000" -> expense.amount in 500.0..2000.0
+                        "Above ₹2,000" -> expense.amount > 2000.0
+                        else -> true
+                    }
+                }
+                else -> true
+            }
+
+            matchesCategory && matchesDate && matchesAmount
         }.sortedByDescending { it.date }
     }
 
@@ -72,7 +115,14 @@ fun TransactionsSubtab(viewModel: AppViewModel) {
                 items(filters) { filter ->
                     FilterChip(
                         selected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter },
+                        onClick = {
+                            selectedFilter = filter
+                            if (filter == "All") {
+                                selectedCategory = null
+                                selectedDateRange = "All time"
+                                selectedAmountRange = "All amounts"
+                            }
+                        },
                         label = { Text(filter, color = if (selectedFilter == filter) NearBlack else MutedCream) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = TanAccent,
@@ -85,6 +135,96 @@ fun TransactionsSubtab(viewModel: AppViewModel) {
                         ),
                         shape = RoundedCornerShape(16.dp)
                     )
+                }
+            }
+
+            // Sub-Filters Row
+            if (selectedFilter != "All") {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    when (selectedFilter) {
+                        "Category" -> {
+                            item {
+                                FilterChip(
+                                    selected = selectedCategory == null,
+                                    onClick = { selectedCategory = null },
+                                    label = { Text("All Categories", color = if (selectedCategory == null) NearBlack else MutedCream) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = OliveAccent,
+                                        containerColor = SurfaceDark
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        borderColor = GlassBorder,
+                                        enabled = true,
+                                        selected = selectedCategory == null
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            }
+                            items(Category.values()) { category ->
+                                FilterChip(
+                                    selected = selectedCategory == category,
+                                    onClick = { selectedCategory = category },
+                                    label = { Text(category.displayName, color = if (selectedCategory == category) NearBlack else MutedCream) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = OliveAccent,
+                                        containerColor = SurfaceDark
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        borderColor = GlassBorder,
+                                        enabled = true,
+                                        selected = selectedCategory == category
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            }
+                        }
+                        "Date" -> {
+                            val dateRanges = listOf("All time", "Today", "This Week", "This Month")
+                            items(dateRanges) { range ->
+                                FilterChip(
+                                    selected = selectedDateRange == range,
+                                    onClick = { selectedDateRange = range },
+                                    label = { Text(range, color = if (selectedDateRange == range) NearBlack else MutedCream) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = OliveAccent,
+                                        containerColor = SurfaceDark
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        borderColor = GlassBorder,
+                                        enabled = true,
+                                        selected = selectedDateRange == range
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            }
+                        }
+                        "Amount range" -> {
+                            val amountRanges = listOf("All amounts", "Under ₹500", "₹500 - ₹2,000", "Above ₹2,000")
+                            items(amountRanges) { range ->
+                                FilterChip(
+                                    selected = selectedAmountRange == range,
+                                    onClick = { selectedAmountRange = range },
+                                    label = { Text(range, color = if (selectedAmountRange == range) NearBlack else MutedCream) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = OliveAccent,
+                                        containerColor = SurfaceDark
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        borderColor = GlassBorder,
+                                        enabled = true,
+                                        selected = selectedAmountRange == range
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
