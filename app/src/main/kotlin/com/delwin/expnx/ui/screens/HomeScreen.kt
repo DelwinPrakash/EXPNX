@@ -38,7 +38,6 @@ fun HomeScreen(viewModel: AppViewModel) {
     val budget by viewModel.budget.collectAsState()
     val allExpenses by viewModel.allExpenses.collectAsState()
     
-    var showAddSheet by remember { mutableStateOf(false) }
     var showSetBudgetDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -92,22 +91,6 @@ fun HomeScreen(viewModel: AppViewModel) {
                     }
                 }
             }
-        }
-    }
-    
-    if (showAddSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showAddSheet = false },
-            containerColor = SurfaceDark,
-            contentColor = CreamText
-        ) {
-            AddExpenseSheet(
-                onSave = { amount, category, desc, date ->
-                    viewModel.saveExpense(amount, category, desc, date)
-                    showAddSheet = false
-                },
-                onCancel = { showAddSheet = false }
-            )
         }
     }
     
