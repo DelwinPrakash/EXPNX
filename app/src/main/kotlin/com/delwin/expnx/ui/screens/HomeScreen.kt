@@ -136,9 +136,9 @@ fun HeaderSection() {
             IconButton(onClick = { /* Mock */ }) {
                 Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = CreamText)
             }
-            IconButton(onClick = { /* Mock */ }) {
-                Icon(Icons.Default.Search, contentDescription = "Search", tint = CreamText)
-            }
+            // IconButton(onClick = { /* Mock */ }) {
+            //     Icon(Icons.Default.Search, contentDescription = "Search", tint = CreamText)
+            // }
         }
     }
 }
