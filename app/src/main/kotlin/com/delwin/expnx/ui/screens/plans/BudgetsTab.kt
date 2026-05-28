@@ -29,17 +29,21 @@ import com.delwin.expnx.data.Category
 import com.delwin.expnx.data.CategoryBudget
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
+import kotlinx.coroutines.launch
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
+import androidx.compose.material.icons.filled.Delete
 
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetsTab(viewModel: AppViewModel) {
     val totalSpent by viewModel.totalSpentThisMonth.collectAsState()
     val budget by viewModel.budget.collectAsState()
-    val categoryBudgetsList by viewModel.categoryBudgets.collectAsState() // 👈 from VM
-    val categorySpending by viewModel.categorySpendThisMonth.collectAsState() // 👈 derived map
+    val categoryBudgetsList by viewModel.categoryBudgets.collectAsState()
+    val categorySpending by viewModel.categorySpendThisMonth.collectAsState()
 
-    // 👇 No placeholder fallback — show 0 if not set, prompt user to set it
     val actualBudget = budget ?: 0.0
     val progress = if (actualBudget > 0.0) {
         (totalSpent / actualBudget).coerceIn(0.0, 1.0).toFloat()
@@ -48,13 +52,17 @@ fun BudgetsTab(viewModel: AppViewModel) {
     val scrollState = rememberScrollState()
     var showAddBudgetDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
         // Monthly Budget Overview
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -68,7 +76,6 @@ fun BudgetsTab(viewModel: AppViewModel) {
                 Text("Monthly Overview", color = MutedCream, style = MaterialTheme.typography.labelLarge)
 
                 if (actualBudget == 0.0) {
-                    // 👇 No budget set yet — show prompt instead of fake numbers
                     Text(
                         "No monthly budget set yet. Set one in Settings.",
                         color = MutedCream,
@@ -164,7 +171,6 @@ fun BudgetsTab(viewModel: AppViewModel) {
         }
 
         if (categoryBudgetsList.isEmpty()) {
-            // 👇 Empty state instead of fake data
             Text(
                 "No category budgets added yet.",
                 color = MutedCream,
@@ -173,13 +179,68 @@ fun BudgetsTab(viewModel: AppViewModel) {
             )
         } else {
             categoryBudgetsList.forEach { categoryBudget ->
-                // 👇 Always read spent from Room via ViewModel synchronously to prevent flickering
-                val spentFromDb = categorySpending[categoryBudget.category] ?: 0.0
-                CategoryBudgetCard(
-                    category = categoryBudget.category,
-                    budget = categoryBudget.budgetAmount,
-                    spent = spentFromDb  // 👈 no fallback to initialSpent placeholder
-                )
+                key(categoryBudget.category) {
+                    val spentFromDb = categorySpending[categoryBudget.category] ?: 0.0
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart) {
+                                scope.launch {
+                                    viewModel.removeCategoryBudget(categoryBudget.category)
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "${categoryBudget.category.displayName} budget deleted",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.addCategoryBudget(categoryBudget)
+                                    }
+                                }
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                    )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        backgroundContent = {
+                            val isDeleting = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+                            val backgroundColor by animateColorAsState(
+                                targetValue = if (isDeleting) RedReveal else Color.Transparent,
+                                animationSpec = tween(300)
+                            )
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isDeleting) 1.2f else 0.0f,
+                                animationSpec = tween(300)
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(backgroundColor)
+                                    .padding(horizontal = 24.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = CreamText,
+                                    modifier = Modifier.scale(iconScale)
+                                )
+                            }
+                        },
+                        enableDismissFromStartToEnd = false,
+                        enableDismissFromEndToStart = true
+                    ) {
+                        CategoryBudgetCard(
+                            category = categoryBudget.category,
+                            budget = categoryBudget.budgetAmount,
+                            spent = spentFromDb
+                        )
+                    }
+                }
             }
         }
 
@@ -197,7 +258,7 @@ fun BudgetsTab(viewModel: AppViewModel) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .wrapContentHeight(),  // 👈 only 2 fields, no need for fixed height
+                    .wrapContentHeight(),
                 shape = RoundedCornerShape(20.dp),
                 color = SurfaceDark
             ) {
@@ -291,11 +352,10 @@ fun BudgetsTab(viewModel: AppViewModel) {
                             onClick = {
                                 val limit = budgetLimit.toDoubleOrNull()
                                 if (limit != null && limit > 0.0) {
-                                    viewModel.addCategoryBudget(  // 👈 save to VM, not local list
+                                    viewModel.addCategoryBudget(
                                         CategoryBudget(
                                             category = selectedCategory,
                                             budgetAmount = limit
-                                            // 👈 no initialSpent — spent always comes from Room
                                         )
                                     )
                                     showAddBudgetDialog = false
@@ -308,6 +368,20 @@ fun BudgetsTab(viewModel: AppViewModel) {
             }
         }
     }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter)
+    ) { data ->
+        Snackbar(
+            snackbarData = data,
+            containerColor = SurfaceDark,
+            contentColor = CreamText,
+            actionColor = TanAccent,
+            shape = RoundedCornerShape(12.dp)
+        )
+    }
+}
 }
 
 @Composable
