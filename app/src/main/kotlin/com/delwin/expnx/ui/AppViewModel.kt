@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import com.delwin.expnx.data.CategoryBudget
 
 data class DashboardUiState(
     val totalSpent: Double = 0.0,
@@ -41,6 +42,31 @@ class AppViewModel(
 
     val budget: StateFlow<Double?> = userPreferencesRepository.monthlyBudget
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val categoryBudgets: StateFlow<List<CategoryBudget>> = repository.allCategoryBudgets
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categorySpendThisMonth: StateFlow<Map<Category, Double>> = allExpenses
+        .map { expenses ->
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val start = calendar.timeInMillis
+            calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+            calendar.set(Calendar.HOUR_OF_DAY, 23)
+            calendar.set(Calendar.MINUTE, 59)
+            calendar.set(Calendar.SECOND, 59)
+            val end = calendar.timeInMillis
+
+            expenses.filter { it.date in start..end }
+                .groupBy { it.category }
+                .mapValues { entry -> entry.value.sumOf { it.amount } }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun saveExpense(amount: Double, category: Category, description: String, date: Long) {
         viewModelScope.launch {
@@ -89,6 +115,18 @@ class AppViewModel(
         return repository.getExpensesByDateRange(start, end)
             .map { list -> list.filter { it.category == category }.sumOf { it.amount } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    }
+
+    fun addCategoryBudget(categoryBudget: CategoryBudget) {
+        viewModelScope.launch {
+            repository.insertCategoryBudget(categoryBudget)
+        }
+    }
+
+    fun removeCategoryBudget(category: Category) {
+        viewModelScope.launch {
+            repository.deleteCategoryBudget(CategoryBudget(category = category, budgetAmount = 0.0))
+        }
     }
 
     companion object {

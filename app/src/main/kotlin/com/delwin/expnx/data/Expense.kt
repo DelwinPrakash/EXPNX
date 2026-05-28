@@ -25,3 +25,11 @@ data class Expense(
     val description: String,
     val date: Long // Timestamp
 )
+
+@Entity(tableName = "category_budgets")
+data class CategoryBudget(
+    @PrimaryKey val category: Category,
+    val budgetAmount: Double,
+    val initialSpent: Double = 0.0
+)
+

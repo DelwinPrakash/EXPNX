@@ -6,6 +6,14 @@ import java.util.Calendar
 class ExpenseRepository(private val expenseDao: ExpenseDao) {
     val allExpenses: Flow<List<Expense>> = expenseDao.getAllExpenses()
 
+    val allCategoryBudgets: Flow<List<CategoryBudget>> = expenseDao.getAllCategoryBudgets()
+
+    suspend fun insertCategoryBudget(categoryBudget: CategoryBudget) =
+        expenseDao.insertCategoryBudget(categoryBudget)
+
+    suspend fun deleteCategoryBudget(categoryBudget: CategoryBudget) =
+        expenseDao.deleteCategoryBudget(categoryBudget)
+
     fun getExpensesByCategory(category: Category): Flow<List<Expense>> = 
         expenseDao.getExpensesByCategory(category)
 

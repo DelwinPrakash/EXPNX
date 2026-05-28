@@ -25,4 +25,14 @@ interface ExpenseDao {
 
     @Query("SELECT SUM(amount) FROM expenses WHERE date BETWEEN :startDate AND :endDate")
     fun getTotalSpentInRange(startDate: Long, endDate: Long): Flow<Double?>
+
+    @Query("SELECT * FROM category_budgets")
+    fun getAllCategoryBudgets(): Flow<List<CategoryBudget>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategoryBudget(categoryBudget: CategoryBudget)
+
+    @Delete
+    suspend fun deleteCategoryBudget(categoryBudget: CategoryBudget)
 }
+
