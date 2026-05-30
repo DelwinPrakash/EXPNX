@@ -32,7 +32,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: AppViewModel) {
+fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}) {
     val totalSpent by viewModel.totalSpentThisMonth.collectAsState()
     val recentExpenses by viewModel.recentExpenses.collectAsState()
     val budget by viewModel.budget.collectAsState()
@@ -70,7 +70,7 @@ fun HomeScreen(viewModel: AppViewModel) {
             }
             
             item {
-                RecentTransactionsHeader()
+                RecentTransactionsHeader(onSeeAllClick)
             }
             
             items(recentExpenses.take(5)) { expense ->
@@ -416,7 +416,7 @@ fun UpcomingPaymentsSection() {
 }
 
 @Composable
-fun RecentTransactionsHeader() {
+fun RecentTransactionsHeader(onSeeAllClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -425,6 +425,6 @@ fun RecentTransactionsHeader() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("Recent Transactions", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.SemiBold)
-        Text("See All", style = MaterialTheme.typography.labelMedium, color = TanAccent, modifier = Modifier.clickable { /* Navigate to Transactions */ })
+        Text("See All", style = MaterialTheme.typography.labelMedium, color = TanAccent, modifier = Modifier.clickable { onSeeAllClick() })
     }
 }

@@ -117,7 +117,18 @@ class MainActivity : ComponentActivity() {
                         popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutVertically(animationSpec = tween(300)) { it / 8 } }
                     ) {
                         composable(Screen.Home.route) {
-                            HomeScreen(viewModel)
+                            HomeScreen(
+                                viewModel = viewModel,
+                                onSeeAllClick = {
+                                    navController.navigate(Screen.Activity.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            )
                         }
                         composable(Screen.Activity.route) {
                             ActivityScreen(viewModel)
