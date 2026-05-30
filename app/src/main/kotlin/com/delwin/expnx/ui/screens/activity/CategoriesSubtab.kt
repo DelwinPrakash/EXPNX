@@ -153,7 +153,7 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
         val limit = selectedCategoryBudget?.budgetAmount ?: 5000.0
         val spentAmount = allExpenses.filter { it.category == selectedCategory }.sumOf { it.amount }
         
-        CategoryDetailDialog(
+        CategoryDetailBottomSheet(
             category = selectedCategory!!,
             budgetLimit = limit,
             spent = spentAmount,
@@ -165,7 +165,7 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryDetailDialog(
+fun CategoryDetailBottomSheet(
     category: Category,
     budgetLimit: Double,
     spent: Double,
@@ -201,356 +201,353 @@ fun CategoryDetailDialog(
         }.reversed()
     }
 
-    Dialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        containerColor = SurfaceDark,
+        scrimColor = Color.Black.copy(alpha = 0.5f),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = MutedCream.copy(alpha = 0.4f)) }
     ) {
-        Surface(
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .fillMaxHeight(0.88f),
-            shape = RoundedCornerShape(24.dp),
-            color = SurfaceDark,
-            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Fixed Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(NearBlack, RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = category.icon,
-                                contentDescription = null,
-                                tint = BurntOrangeAccent,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = category.displayName,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = CreamText
-                            )
-                            Text(
-                                text = "Category Insights",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MutedCream
-                            )
-                        }
-                    }
-                    
-                    IconButton(
-                        onClick = onDismiss,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = GlassSurface,
-                            contentColor = CreamText
-                        ),
-                        modifier = Modifier.size(36.dp)
+            // Fixed Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(NearBlack, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            modifier = Modifier.size(18.dp)
+                            imageVector = category.icon,
+                            contentDescription = null,
+                            tint = BurntOrangeAccent,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = category.displayName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = CreamText
+                        )
+                        Text(
+                            text = "Category Insights",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MutedCream
                         )
                     }
                 }
-
-                HorizontalDivider(color = GlassBorder)
-
-                // Scrollable Body
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(scrollState)
-                        .padding(horizontal = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                
+                IconButton(
+                    onClick = onDismiss,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = GlassSurface,
+                        contentColor = CreamText
+                    ),
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
 
-                    // Section 1: Trend Chart
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Spending Trend (Last 7 Days)",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MutedCream
-                        )
-                        
-                        Card(
+            HorizontalDivider(color = GlassBorder)
+
+            // Scrollable Body
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Section 1: Trend Chart
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Spending Trend (Last 7 Days)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MutedCream
+                    )
+                    
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = NearBlack),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = NearBlack),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
+                                .fillMaxSize()
+                                .padding(top = 16.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(top = 16.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
-                            ) {
-                                Canvas(modifier = Modifier.fillMaxSize()) {
-                                    val maxVal = (dailySpend.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
-                                    val points = dailySpend.mapIndexed { idx, valAmt ->
-                                        val x = (size.width / 6f) * idx
-                                        val y = size.height - (size.height * (valAmt / maxVal).toFloat())
-                                        Offset(x, y)
-                                    }
-
-                                    // Draw spline (bezier path)
-                                    val path = Path()
-                                    if (points.isNotEmpty()) {
-                                        path.moveTo(points[0].x, points[0].y)
-                                        for (i in 1 until points.size) {
-                                            val prev = points[i - 1]
-                                            val curr = points[i]
-                                            val ctrlX = (prev.x + curr.x) / 2
-                                            path.cubicTo(
-                                                ctrlX, prev.y,
-                                                ctrlX, curr.y,
-                                                curr.x, curr.y
-                                            )
-                                        }
-                                        
-                                        // Draw gradient background under path
-                                        val fillPath = Path().apply {
-                                            addPath(path)
-                                            lineTo(points.last().x, size.height)
-                                            lineTo(points.first().x, size.height)
-                                            close()
-                                        }
-                                        
-                                        drawPath(
-                                            path = fillPath,
-                                            brush = Brush.verticalGradient(
-                                                colors = listOf(
-                                                    BurntOrangeAccent.copy(alpha = 0.25f),
-                                                    Color.Transparent
-                                                )
-                                            )
-                                        )
-
-                                        // Draw spline line stroke
-                                        drawPath(
-                                            path = path,
-                                            color = BurntOrangeAccent,
-                                            style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                                        )
-
-                                        // Draw glowing data points
-                                        points.forEachIndexed { index, pt ->
-                                            val amt = dailySpend[index]
-                                            if (amt > 0) {
-                                                // Outer glow ring
-                                                drawCircle(
-                                                    color = BurntOrangeAccent.copy(alpha = 0.3f),
-                                                    radius = 8.dp.toPx(),
-                                                    center = pt
-                                                )
-                                                // Inner point
-                                                drawCircle(
-                                                    color = CreamText,
-                                                    radius = 4.dp.toPx(),
-                                                    center = pt
-                                                )
-                                            }
-                                        }
-                                    }
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                val maxVal = (dailySpend.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
+                                val points = dailySpend.mapIndexed { idx, valAmt ->
+                                    val x = (size.width / 6f) * idx
+                                    val y = size.height - (size.height * (valAmt / maxVal).toFloat())
+                                    Offset(x, y)
                                 }
 
-                                // Date labels under the chart
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.BottomCenter)
-                                        .offset(y = 16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    val formatter = SimpleDateFormat("E", Locale.getDefault())
-                                    (0..6).map { daysAgo ->
-                                        val cal = Calendar.getInstance()
-                                        cal.add(Calendar.DAY_OF_YEAR, -daysAgo)
-                                        cal.time
-                                    }.reversed().forEach { date ->
-                                        Text(
-                                            text = formatter.format(date),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MutedCream,
-                                            fontSize = 10.sp
+                                // Draw spline (bezier path)
+                                val path = Path()
+                                if (points.isNotEmpty()) {
+                                    path.moveTo(points[0].x, points[0].y)
+                                    for (i in 1 until points.size) {
+                                        val prev = points[i - 1]
+                                        val curr = points[i]
+                                        val ctrlX = (prev.x + curr.x) / 2
+                                        path.cubicTo(
+                                            ctrlX, prev.y,
+                                            ctrlX, curr.y,
+                                            curr.x, curr.y
                                         )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Section 2: Budget Status
-                    val progress = (spent / budgetLimit).coerceIn(0.0, 1.0).toFloat()
-                    val isOver = spent > budgetLimit
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Budget Status",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MutedCream
-                        )
-                        
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = GlassSurface),
-                            shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("Total Spent", style = MaterialTheme.typography.labelMedium, color = MutedCream)
-                                        Text("₹${String.format("%,.2f", spent)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = CreamText)
                                     }
                                     
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (isOver) RedReveal.copy(alpha = 0.15f) else OliveAccent.copy(alpha = 0.15f))
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text(
-                                            text = if (isOver) "Over Budget" else "Within Budget",
-                                            color = if (isOver) RedReveal else OliveAccent,
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.labelMedium
+                                    // Draw gradient background under path
+                                    val fillPath = Path().apply {
+                                        addPath(path)
+                                        lineTo(points.last().x, size.height)
+                                        lineTo(points.first().x, size.height)
+                                        close()
+                                    }
+                                    
+                                    drawPath(
+                                        path = fillPath,
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                BurntOrangeAccent.copy(alpha = 0.25f),
+                                                Color.Transparent
+                                            )
                                         )
+                                    )
+
+                                    // Draw spline line stroke
+                                    drawPath(
+                                        path = path,
+                                        color = BurntOrangeAccent,
+                                        style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                    )
+
+                                    // Draw glowing data points
+                                    points.forEachIndexed { index, pt ->
+                                        val amt = dailySpend[index]
+                                        if (amt > 0) {
+                                            // Outer glow ring
+                                            drawCircle(
+                                                color = BurntOrangeAccent.copy(alpha = 0.3f),
+                                                radius = 8.dp.toPx(),
+                                                center = pt
+                                            )
+                                            // Inner point
+                                            drawCircle(
+                                                color = CreamText,
+                                                radius = 4.dp.toPx(),
+                                                center = pt
+                                            )
+                                        }
                                     }
                                 }
-
-                                // Remaining / Total
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text("Limit", style = MaterialTheme.typography.labelSmall, color = MutedCream)
-                                        Text("₹${String.format("%,.0f", budgetLimit)}", style = MaterialTheme.typography.bodyMedium, color = CreamText, fontWeight = FontWeight.SemiBold)
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(if (isOver) "Exceeded by" else "Remaining", style = MaterialTheme.typography.labelSmall, color = MutedCream)
-                                        Text(
-                                            text = "₹${String.format("%,.2f", kotlin.math.abs(budgetLimit - spent))}",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isOver) RedReveal else TanAccent,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-                                }
-
-                                // Progress Bar
-                                LinearProgressIndicator(
-                                    progress = { progress },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(8.dp),
-                                    color = if (isOver) RedReveal else TanAccent,
-                                    trackColor = NearBlack,
-                                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                                )
                             }
-                        }
-                    }
 
-                    // Section 3: AI Recommendations
-                    val recommendation = remember(spent, budgetLimit, category) {
-                        val pct = spent / budgetLimit
-                        when {
-                            pct > 1.0 -> "Recommendation: You've exceeded your spending budget in ${category.displayName}. We recommend freezing non-essential category spends for the rest of the month."
-                            pct >= 0.8 -> "Alert: You've consumed ${(pct * 100).toInt()}% of your ${category.displayName} budget limit. Consider trimming down unnecessary costs here to prevent going over."
-                            pct <= 0.3 -> "Outstanding: Your ${category.displayName} expenses are well-contained, using just ${(pct * 100).toInt()}% of your limit. Keep it up!"
-                            else -> "Discipline: Your spending velocity for ${category.displayName} is healthy. Keep tracking daily payments to sustain this momentum."
-                        }
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "AI Spending Insight",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MutedCream
-                        )
-                        
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = TanAccent.copy(alpha = 0.08f)),
-                            shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, TanAccent.copy(alpha = 0.2f))
-                        ) {
+                            // Date labels under the chart
                             Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Insights,
-                                    contentDescription = "AI recommendations",
-                                    tint = TanAccent,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    text = recommendation,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = CreamText
-                                )
-                            }
-                        }
-                    }
-
-                    // Section 4: Recent Transactions
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Recent Transactions",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MutedCream
-                        )
-                        
-                        if (categoryExpenses.isEmpty()) {
-                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 24.dp),
-                                contentAlignment = Alignment.Center
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "No transactions found in this category",
-                                    color = MutedCream,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                categoryExpenses.take(5).forEach { expense ->
-                                    ExpenseItem(expense = expense)
+                                val formatter = SimpleDateFormat("E", Locale.getDefault())
+                                (0..6).map { daysAgo ->
+                                    val cal = Calendar.getInstance()
+                                    cal.add(Calendar.DAY_OF_YEAR, -daysAgo)
+                                    cal.time
+                                }.reversed().forEach { date ->
+                                    Text(
+                                        text = formatter.format(date),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MutedCream,
+                                        fontSize = 10.sp
+                                    )
                                 }
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
+
+                // Section 2: Budget Status
+                val progress = (spent / budgetLimit).coerceIn(0.0, 1.0).toFloat()
+                val isOver = spent > budgetLimit
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Budget Status",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MutedCream
+                    )
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = GlassSurface),
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Total Spent", style = MaterialTheme.typography.labelMedium, color = MutedCream)
+                                    Text("₹${String.format("%,.2f", spent)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = CreamText)
+                                }
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isOver) RedReveal.copy(alpha = 0.15f) else OliveAccent.copy(alpha = 0.15f))
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = if (isOver) "Over Budget" else "Within Budget",
+                                        color = if (isOver) RedReveal else OliveAccent,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
+
+                            // Remaining / Total
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text("Limit", style = MaterialTheme.typography.labelSmall, color = MutedCream)
+                                    Text("₹${String.format("%,.0f", budgetLimit)}", style = MaterialTheme.typography.bodyMedium, color = CreamText, fontWeight = FontWeight.SemiBold)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(if (isOver) "Exceeded by" else "Remaining", style = MaterialTheme.typography.labelSmall, color = MutedCream)
+                                    Text(
+                                        text = "₹${String.format("%,.2f", kotlin.math.abs(budgetLimit - spent))}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (isOver) RedReveal else TanAccent,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            // Progress Bar
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
+                                color = if (isOver) RedReveal else TanAccent,
+                                trackColor = NearBlack,
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                        }
+                    }
+                }
+
+                // Section 3: AI Recommendations
+                val recommendation = remember(spent, budgetLimit, category) {
+                    val pct = spent / budgetLimit
+                    when {
+                        pct > 1.0 -> "Recommendation: You've exceeded your spending budget in ${category.displayName}. We recommend freezing non-essential category spends for the rest of the month."
+                        pct >= 0.8 -> "Alert: You've consumed ${(pct * 100).toInt()}% of your ${category.displayName} budget limit. Consider trimming down unnecessary costs here to prevent going over."
+                        pct <= 0.3 -> "Outstanding: Your ${category.displayName} expenses are well-contained, using just ${(pct * 100).toInt()}% of your limit. Keep it up!"
+                        else -> "Discipline: Your spending velocity for ${category.displayName} is healthy. Keep tracking daily payments to sustain this momentum."
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "AI Spending Insight",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MutedCream
+                    )
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = TanAccent.copy(alpha = 0.08f)),
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, TanAccent.copy(alpha = 0.2f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Insights,
+                                contentDescription = "AI recommendations",
+                                tint = TanAccent,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = recommendation,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = CreamText
+                            )
+                        }
+                    }
+                }
+
+                // Section 4: Recent Transactions
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Recent Transactions",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MutedCream
+                    )
+                    
+                    if (categoryExpenses.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No transactions found in this category",
+                                color = MutedCream,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            categoryExpenses.take(5).forEach { expense ->
+                                ExpenseItem(expense = expense)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
