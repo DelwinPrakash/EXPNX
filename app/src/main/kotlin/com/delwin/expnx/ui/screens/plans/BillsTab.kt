@@ -877,6 +877,7 @@ fun BillCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (isPaid) Color.Transparent else SurfaceDark

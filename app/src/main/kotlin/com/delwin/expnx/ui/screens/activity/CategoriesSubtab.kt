@@ -88,6 +88,7 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
                     .clickable {
                         selectedCategory = category
                         showCategoryDetail = true

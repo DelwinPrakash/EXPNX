@@ -139,12 +139,14 @@ fun GoalsTab() {
                     savedAmount = goal.savedAmount,
                     predictedDate = goal.predictedDate,
                     monthlySuggestion = goal.monthlySuggestion,
-                    modifier = Modifier.combinedClickable(
-                        onClick = { /* normal click is ignored or customizable */ },
-                        onLongClick = {
-                            selectedGoalForMenu = goal
-                        }
-                    )
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .combinedClickable(
+                            onClick = { /* normal click is ignored or customizable */ },
+                            onLongClick = {
+                                selectedGoalForMenu = goal
+                            }
+                        )
                 )
             }
 
