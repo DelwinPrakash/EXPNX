@@ -35,6 +35,7 @@ import com.delwin.expnx.ui.AppViewModel
 import kotlinx.coroutines.launch
 
 enum class BillCategory(val displayName: String) {
+    OVERDUE("Overdue"),
     THIS_WEEK("This Week"),
     LATER_THIS_MONTH("Later this Month")
 }
@@ -76,8 +77,8 @@ fun BillsTab(viewModel: AppViewModel) {
     )
 
     // Dynamic summary calculations
-    val upcomingAmount = billsList.filter { !it.isPaid }.sumOf { it.amount }
-    val overdueAmount = billsList.filter { !it.isPaid && it.dueDate.equals("Overdue", ignoreCase = true) }.sumOf { it.amount }
+    val upcomingAmount = billsList.filter { !it.isPaid && it.category != BillCategory.OVERDUE }.sumOf { it.amount }
+    val overdueAmount = billsList.filter { !it.isPaid && it.category == BillCategory.OVERDUE }.sumOf { it.amount }
 
     val onDeleteBill: (Bill) -> Unit = { bill ->
         scope.launch {
@@ -149,6 +150,33 @@ fun BillsTab(viewModel: AppViewModel) {
                         contentDescription = "Add Bill",
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+
+            // Overdue Section (Unpaid)
+            val overdueBills = billsList.filter { it.category == BillCategory.OVERDUE && !it.isPaid }
+            if (overdueBills.isNotEmpty()) {
+                Text("Overdue", color = RedReveal, style = MaterialTheme.typography.titleSmall)
+                overdueBills.forEach { bill ->
+                    key(bill.id) {
+                        SwipeableBillRow(
+                            onDelete = { onDeleteBill(bill) },
+                            onEdit = { onEditBill(bill) }
+                        ) {
+                            BillCard(
+                                title = bill.title,
+                                provider = bill.provider,
+                                icon = bill.icon,
+                                amount = bill.amount,
+                                dueDate = bill.dueDate,
+                                isPaid = bill.isPaid,
+                                autoPay = bill.autoPay,
+                                onClick = {
+                                    viewModel.updateBill(bill.copy(isPaid = !bill.isPaid))
+                                }
+                            )
+                        }
+                    }
                 }
             }
 

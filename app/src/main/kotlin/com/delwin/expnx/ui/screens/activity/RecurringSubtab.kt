@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.screens.plans.Bill
+import com.delwin.expnx.ui.screens.plans.BillCategory
 import com.delwin.expnx.ui.theme.*
 
 @Composable
@@ -26,8 +27,8 @@ fun RecurringSubtab(viewModel: AppViewModel) {
 
     // Dynamic calculations
     val totalCommitments = billsList.sumOf { it.amount }
-    val missedBills = billsList.filter { !it.isPaid && (it.dueDate.contains("May") || it.dueDate.contains("Overdue") || it.dueDate.contains("ago")) }
-    val upcomingBills = billsList.filter { !it.isPaid && !(it.dueDate.contains("May") || it.dueDate.contains("Overdue") || it.dueDate.contains("ago")) }
+    val missedBills = billsList.filter { !it.isPaid && it.category == BillCategory.OVERDUE }
+    val upcomingBills = billsList.filter { !it.isPaid && it.category != BillCategory.OVERDUE }
     val activeSubscriptions = billsList.filter { it.autoPay || it.isPaid }
 
     LazyColumn(

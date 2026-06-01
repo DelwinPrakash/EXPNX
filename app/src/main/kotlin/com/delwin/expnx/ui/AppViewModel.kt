@@ -165,7 +165,7 @@ class AppViewModel(
                 dueDate = "May 25",
                 isPaid = false,
                 autoPay = false,
-                category = BillCategory.LATER_THIS_MONTH
+                category = BillCategory.OVERDUE
             ),
             Bill(
                 title = "Gym Membership",
@@ -175,7 +175,7 @@ class AppViewModel(
                 dueDate = "May 28",
                 isPaid = false,
                 autoPay = false,
-                category = BillCategory.LATER_THIS_MONTH
+                category = BillCategory.OVERDUE
             ),
             Bill(
                 title = "Netflix",
