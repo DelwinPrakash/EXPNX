@@ -29,10 +29,15 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 import kotlinx.coroutines.launch
 
 data class Goal(
+    val id: String = java.util.UUID.randomUUID().toString(),
     val title: String,
     val icon: ImageVector,
     val targetAmount: Double,
@@ -43,7 +48,7 @@ data class Goal(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GoalsTab() {
+fun GoalsTab(viewModel: AppViewModel) {
     val scrollState = rememberScrollState()
     var showAddGoalDialog by remember { mutableStateOf(false) }
 
@@ -54,14 +59,7 @@ fun GoalsTab() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val goalsList = remember {
-        mutableStateListOf(
-            Goal("Emergency Fund", Icons.Default.Savings, 100000.0, 65000.0, "Oct 2026", 5000.0),
-            Goal("Japan Vacation", Icons.Default.FlightTakeoff, 250000.0, 50000.0, "May 2027", 15000.0),
-            Goal("New Laptop", Icons.Default.LaptopMac, 120000.0, 100000.0, "Jul 2026", 10000.0),
-            Goal("Car Downpayment", Icons.Default.DirectionsCar, 500000.0, 50000.0, "Dec 2027", 25000.0)
-        )
-    }
+    val goalsList by viewModel.goalsList.collectAsState()
 
     val availableIcons = listOf(
         Icons.Default.Savings,
@@ -88,22 +86,25 @@ fun GoalsTab() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // AI Suggestion
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0x1594A853)), // Subtle Olive Accent
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x3094A853))
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
+            if (goalsList.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0x1594A853)), // Subtle Olive Accent
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x3094A853))
                 ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI", tint = OliveAccent, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        "You can reach your 'Emergency Fund' goal 2 months earlier by reducing dining expenses by 10%.",
-                        color = CreamText,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = "AI", tint = OliveAccent, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        val goalTitle = goalsList.first().title
+                        Text(
+                            "You can reach your '$goalTitle' goal 2 months earlier by reducing dining expenses by 10%.",
+                            color = CreamText,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
             
@@ -128,6 +129,68 @@ fun GoalsTab() {
                         contentDescription = "Add Goal",
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+
+            if (goalsList.isEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .background(GlassSurface, RoundedCornerShape(24.dp))
+                            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Savings,
+                            contentDescription = null,
+                            tint = OliveAccent.copy(alpha = 0.8f),
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "No Goals Set Yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = CreamText,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Track your savings objectives by creating your first financial goal.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MutedCream,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                    }
+                    Button(
+                        onClick = { showAddGoalDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = OliveAccent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = NearBlack,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Create Your First Goal",
+                            color = NearBlack,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
@@ -307,7 +370,7 @@ fun GoalsTab() {
                         TextButton(
                             onClick = {
                                 if (title.isNotBlank() && targetAmount.toDoubleOrNull() != null) {
-                                    goalsList.add(
+                                    viewModel.addGoal(
                                         Goal(
                                             title = title,
                                             icon = selectedIcon,
@@ -388,18 +451,15 @@ fun GoalsTab() {
                             onClick = {
                                 scope.launch {
                                     val deletedGoal = focusedGoal
-                                    val deletedIndex = goalsList.indexOf(focusedGoal)
-                                    if (deletedIndex != -1) {
-                                        goalsList.removeAt(deletedIndex)
-                                        selectedGoalForMenu = null
-                                        val result = snackbarHostState.showSnackbar(
-                                            message = "'${deletedGoal.title}' deleted",
-                                            actionLabel = "Undo",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            goalsList.add(deletedIndex, deletedGoal)
-                                        }
+                                    viewModel.removeGoal(deletedGoal.id)
+                                    selectedGoalForMenu = null
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "'${deletedGoal.title}' deleted",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.addGoal(deletedGoal)
                                     }
                                 }
                             }
@@ -566,9 +626,9 @@ fun GoalsTab() {
                             onClick = {
                                 val targetAmt = targetAmount.toDoubleOrNull()
                                 if (title.isNotBlank() && targetAmt != null) {
-                                    val index = goalsList.indexOf(currentGoal)
-                                    if (index != -1) {
-                                        goalsList[index] = Goal(
+                                    viewModel.updateGoal(
+                                        Goal(
+                                            id = currentGoal.id,
                                             title = title,
                                             icon = selectedIcon,
                                             targetAmount = targetAmt,
@@ -576,7 +636,7 @@ fun GoalsTab() {
                                             predictedDate = predictedDate.ifBlank { "TBD" },
                                             monthlySuggestion = monthlySuggestion.toDoubleOrNull() ?: 0.0
                                         )
-                                    }
+                                    )
                                     showEditGoalDialog = false
                                 }
                             },

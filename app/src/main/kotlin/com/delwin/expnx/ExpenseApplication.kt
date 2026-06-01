@@ -30,7 +30,7 @@ interface AppContainer {
 class AppDataContainer(private val context: Context) : AppContainer {
     override val expenseRepository: ExpenseRepository by lazy {
         val database = ExpenseDatabase.getDatabase(context)
-        ExpenseRepository(database.expenseDao(), database.billDao())
+        ExpenseRepository(database.expenseDao(), database.billDao(), database.goalDao())
     }
     
     override val userPreferencesRepository: UserPreferencesRepository by lazy {

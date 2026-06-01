@@ -4,10 +4,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import com.delwin.expnx.ui.screens.plans.Bill
+import com.delwin.expnx.ui.screens.plans.Goal
 
 class ExpenseRepository(
     private val expenseDao: ExpenseDao,
-    private val billDao: BillDao
+    private val billDao: BillDao,
+    private val goalDao: GoalDao
 ) {
     val allExpenses: Flow<List<Expense>> = expenseDao.getAllExpenses()
 
@@ -64,4 +66,14 @@ class ExpenseRepository(
     fun getTotalSpentByCategory(startDate: Long, endDate: Long): Flow<Double?> {
         return expenseDao.getTotalSpentInRange(startDate, endDate)
     }
+
+    val allGoals: Flow<List<Goal>> = goalDao.getAllGoals().map { list -> list.map { it.toGoal() } }
+
+    suspend fun insertGoal(goal: Goal) = goalDao.insertGoal(goal.toEntity())
+
+    suspend fun updateGoal(goal: Goal) = goalDao.updateGoal(goal.toEntity())
+
+    suspend fun deleteGoal(goal: Goal) = goalDao.deleteGoal(goal.toEntity())
+
+    suspend fun deleteGoalById(goalId: String) = goalDao.deleteGoalById(goalId)
 }

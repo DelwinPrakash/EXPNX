@@ -19,6 +19,7 @@ import java.util.Calendar
 import com.delwin.expnx.data.CategoryBudget
 import com.delwin.expnx.ui.screens.plans.Bill
 import com.delwin.expnx.ui.screens.plans.BillCategory
+import com.delwin.expnx.ui.screens.plans.Goal
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.material.icons.Icons
@@ -153,6 +154,27 @@ class AppViewModel(
     fun updateBill(updatedBill: Bill) {
         viewModelScope.launch {
             repository.updateBill(updatedBill)
+        }
+    }
+
+    val goalsList: StateFlow<List<Goal>> = repository.allGoals
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addGoal(goal: Goal) {
+        viewModelScope.launch {
+            repository.insertGoal(goal)
+        }
+    }
+
+    fun removeGoal(goalId: String) {
+        viewModelScope.launch {
+            repository.deleteGoalById(goalId)
+        }
+    }
+
+    fun updateGoal(updatedGoal: Goal) {
+        viewModelScope.launch {
+            repository.updateGoal(updatedGoal)
         }
     }
 
