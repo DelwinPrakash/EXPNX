@@ -1,12 +1,29 @@
 package com.delwin.expnx.data
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.util.Calendar
+import com.delwin.expnx.ui.screens.plans.Bill
 
-class ExpenseRepository(private val expenseDao: ExpenseDao) {
+class ExpenseRepository(
+    private val expenseDao: ExpenseDao,
+    private val billDao: BillDao
+) {
     val allExpenses: Flow<List<Expense>> = expenseDao.getAllExpenses()
 
     val allCategoryBudgets: Flow<List<CategoryBudget>> = expenseDao.getAllCategoryBudgets()
+
+    val allBills: Flow<List<Bill>> = billDao.getAllBills().map { list -> list.map { it.toBill() } }
+
+    suspend fun getAllBillsOnce(): List<Bill> = billDao.getAllBillsOnce().map { it.toBill() }
+
+    suspend fun insertBill(bill: Bill) = billDao.insertBill(bill.toEntity())
+
+    suspend fun updateBill(bill: Bill) = billDao.updateBill(bill.toEntity())
+
+    suspend fun deleteBill(bill: Bill) = billDao.deleteBill(bill.toEntity())
+
+    suspend fun deleteBillById(billId: String) = billDao.deleteBillById(billId)
 
     suspend fun insertCategoryBudget(categoryBudget: CategoryBudget) =
         expenseDao.insertCategoryBudget(categoryBudget)

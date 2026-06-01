@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.border
+import androidx.compose.ui.text.style.TextAlign
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.screens.plans.Bill
 import com.delwin.expnx.ui.screens.plans.BillCategory
@@ -54,6 +56,49 @@ fun RecurringSubtab(viewModel: AppViewModel) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedCream
                     )
+                }
+            }
+        }
+
+        if (billsList.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .background(GlassSurface, RoundedCornerShape(24.dp))
+                            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Autorenew,
+                            contentDescription = null,
+                            tint = MutedCream.copy(alpha = 0.8f),
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "No Activity Found",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = CreamText,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Active subscriptions and upcoming bills will appear here.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MutedCream,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                    }
                 }
             }
         }

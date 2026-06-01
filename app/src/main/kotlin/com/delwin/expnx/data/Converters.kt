@@ -12,4 +12,14 @@ class Converters {
     fun toCategory(value: String): Category {
         return Category.valueOf(value)
     }
+
+    @TypeConverter
+    fun fromBillCategory(category: com.delwin.expnx.ui.screens.plans.BillCategory): String {
+        return category.name
+    }
+
+    @TypeConverter
+    fun toBillCategory(value: String): com.delwin.expnx.ui.screens.plans.BillCategory {
+        return com.delwin.expnx.ui.screens.plans.BillCategory.valueOf(value)
+    }
 }

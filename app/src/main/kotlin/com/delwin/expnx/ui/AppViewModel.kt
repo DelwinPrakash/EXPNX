@@ -135,72 +135,25 @@ class AppViewModel(
         }
     }
 
-    private val _billsList = MutableStateFlow<List<Bill>>(
-        listOf(
-            Bill(
-                title = "Electricity Bill",
-                provider = "BESCOM",
-                icon = Icons.Default.Bolt,
-                amount = 1250.0,
-                dueDate = "Tomorrow",
-                isPaid = false,
-                autoPay = true,
-                category = BillCategory.THIS_WEEK
-            ),
-            Bill(
-                title = "Internet",
-                provider = "JioFiber",
-                icon = Icons.Default.Wifi,
-                amount = 999.0,
-                dueDate = "In 3 Days",
-                isPaid = false,
-                autoPay = true,
-                category = BillCategory.THIS_WEEK
-            ),
-            Bill(
-                title = "Car EMI",
-                provider = "HDFC Bank",
-                icon = Icons.Default.DirectionsCar,
-                amount = 8500.0,
-                dueDate = "May 25",
-                isPaid = false,
-                autoPay = false,
-                category = BillCategory.OVERDUE
-            ),
-            Bill(
-                title = "Gym Membership",
-                provider = "Cult.fit",
-                icon = Icons.Default.FitnessCenter,
-                amount = 1700.0,
-                dueDate = "May 28",
-                isPaid = false,
-                autoPay = false,
-                category = BillCategory.OVERDUE
-            ),
-            Bill(
-                title = "Netflix",
-                provider = "Streaming",
-                icon = Icons.Default.LiveTv,
-                amount = 649.0,
-                dueDate = "May 02",
-                isPaid = true,
-                autoPay = true,
-                category = BillCategory.LATER_THIS_MONTH
-            )
-        )
-    )
-    val billsList: StateFlow<List<Bill>> = _billsList.asStateFlow()
+    val billsList: StateFlow<List<Bill>> = repository.allBills
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addBill(bill: Bill) {
-        _billsList.value = _billsList.value + bill
+        viewModelScope.launch {
+            repository.insertBill(bill)
+        }
     }
 
     fun removeBill(billId: String) {
-        _billsList.value = _billsList.value.filterNot { it.id == billId }
+        viewModelScope.launch {
+            repository.deleteBillById(billId)
+        }
     }
 
     fun updateBill(updatedBill: Bill) {
-        _billsList.value = _billsList.value.map { if (it.id == updatedBill.id) updatedBill else it }
+        viewModelScope.launch {
+            repository.updateBill(updatedBill)
+        }
     }
 
     companion object {
