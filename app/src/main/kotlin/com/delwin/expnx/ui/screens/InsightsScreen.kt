@@ -145,60 +145,135 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(220.dp)
                 .padding(horizontal = 16.dp)
                 .background(SurfaceDark, RoundedCornerShape(16.dp))
                 .padding(16.dp)
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val path = Path()
-                val steps = 6
-                val stepX = size.width / steps
+            Row(modifier = Modifier.fillMaxSize()) {
+                val yLabels = when (selectedTimeRange) {
+                    0 -> listOf("₹10k", "₹7.5k", "₹5k", "₹2.5k", "₹0")
+                    2 -> listOf("₹5L", "₹3.75L", "₹2.5L", "₹1.25L", "₹0")
+                    else -> listOf("₹40k", "₹30k", "₹20k", "₹10k", "₹0")
+                }
                 
-                val points = when (selectedTimeRange) {
-                    0 -> listOf( // Weekly - Spike at weekends
-                        Offset(0f, size.height * 0.7f),
-                        Offset(stepX * 1.5f, size.height * 0.75f),
-                        Offset(stepX * 3.5f, size.height * 0.3f), // Weekend spike
-                        Offset(stepX * 5f, size.height * 0.8f),
-                        Offset(size.width, size.height * 0.6f)
-                    )
-                    2 -> listOf( // Yearly - Holiday season peak
-                        Offset(0f, size.height * 0.5f),
-                        Offset(stepX * 2f, size.height * 0.6f),
-                        Offset(stepX * 4f, size.height * 0.7f),
-                        Offset(size.width, size.height * 0.2f)
-                    )
-                    else -> listOf( // Monthly (Default)
-                        Offset(0f, size.height * 0.8f),
-                        Offset(stepX * 2f, size.height * 0.5f),
-                        Offset(stepX * 4f, size.height * 0.3f),
-                        Offset(size.width, size.height * 0.2f)
-                    )
+                // Y-Axis
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(end = 8.dp),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        yLabels.forEach { label ->
+                            Text(
+                                text = label,
+                                color = MutedCream,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
-                if (points.isNotEmpty()) {
-                    path.moveTo(points[0].x, points[0].y)
-                    for (i in 1 until points.size) {
-                        val prevPt = points[i - 1]
-                        val currPt = points[i]
-                        val controlX = (prevPt.x + currPt.x) / 2
-                        path.cubicTo(
-                            controlX, prevPt.y,
-                            controlX, currPt.y,
-                            currPt.x, currPt.y
+                // Chart & X-Axis
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                ) {
+                    Canvas(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        val path = Path()
+                        val steps = 6
+                        val stepX = size.width / steps
+                        
+                        // Draw grid lines
+                        val gridLinesCount = 4
+                        for (i in 0..gridLinesCount) {
+                            val y = size.height * (i.toFloat() / gridLinesCount)
+                            drawLine(
+                                color = MutedCream.copy(alpha = 0.08f),
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+
+                        val points = when (selectedTimeRange) {
+                            0 -> listOf( // Weekly - Spike at weekends
+                                Offset(0f, size.height * 0.7f),
+                                Offset(stepX * 1.5f, size.height * 0.75f),
+                                Offset(stepX * 3.5f, size.height * 0.3f), // Weekend spike
+                                Offset(stepX * 5f, size.height * 0.8f),
+                                Offset(size.width, size.height * 0.6f)
+                            )
+                            2 -> listOf( // Yearly - Holiday season peak
+                                Offset(0f, size.height * 0.5f),
+                                Offset(stepX * 2f, size.height * 0.6f),
+                                Offset(stepX * 4f, size.height * 0.7f),
+                                Offset(size.width, size.height * 0.2f)
+                            )
+                            else -> listOf( // Monthly (Default)
+                                Offset(0f, size.height * 0.8f),
+                                Offset(stepX * 2f, size.height * 0.5f),
+                                Offset(stepX * 4f, size.height * 0.3f),
+                                Offset(size.width, size.height * 0.2f)
+                            )
+                        }
+
+                        if (points.isNotEmpty()) {
+                            path.moveTo(points[0].x, points[0].y)
+                            for (i in 1 until points.size) {
+                                val prevPt = points[i - 1]
+                                val currPt = points[i]
+                                val controlX = (prevPt.x + currPt.x) / 2
+                                path.cubicTo(
+                                    controlX, prevPt.y,
+                                    controlX, currPt.y,
+                                    currPt.x, currPt.y
+                                )
+                            }
+                        }
+                        
+                        drawPath(
+                            path = path,
+                            color = TanAccent,
+                            style = Stroke(width = 4.dp.toPx())
                         )
+                        
+                        points.forEach { pt ->
+                            drawCircle(color = BurntOrangeAccent, radius = 6.dp.toPx(), center = pt)
+                        }
                     }
-                }
-                
-                drawPath(
-                    path = path,
-                    color = TanAccent,
-                    style = Stroke(width = 4.dp.toPx())
-                )
-                
-                points.forEach { pt ->
-                    drawCircle(color = BurntOrangeAccent, radius = 6.dp.toPx(), center = pt)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val xLabels = when (selectedTimeRange) {
+                        0 -> listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                        2 -> listOf("Jan", "Mar", "May", "Jul", "Sep", "Nov")
+                        else -> listOf("Wk 1", "Wk 2", "Wk 3", "Wk 4")
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        xLabels.forEach { label ->
+                            Text(
+                                text = label,
+                                color = MutedCream,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                 }
             }
         }
