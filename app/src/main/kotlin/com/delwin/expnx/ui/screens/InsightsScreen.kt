@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.delwin.expnx.ui.AppViewModel
@@ -30,6 +32,8 @@ import com.delwin.expnx.ui.theme.*
 @Composable
 fun InsightsScreen(viewModel: AppViewModel) {
     var selectedTimeRange by remember { mutableStateOf(1) } // 0: Weekly, 1: Monthly, 2: Yearly
+    var showRecommendationSheet by remember { mutableStateOf(false) }
+    var selectedRecommendationId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -58,7 +62,12 @@ fun InsightsScreen(viewModel: AppViewModel) {
             item { SpendingTrendsSection(selectedTimeRange) { selectedTimeRange = it } }
 
             // AI Recommendations
-            item { AIRecommendationsSection() }
+            item {
+                AIRecommendationsSection { recId ->
+                    selectedRecommendationId = recId
+                    showRecommendationSheet = true
+                }
+            }
 
             // Predictions
             item { PredictionsSection() }
@@ -68,6 +77,16 @@ fun InsightsScreen(viewModel: AppViewModel) {
 
             // Reports
             item { ReportsSection() }
+        }
+    }
+
+    if (showRecommendationSheet && selectedRecommendationId != null) {
+        val selectedRec = aiRecommendationsList.find { it.id == selectedRecommendationId }
+        if (selectedRec != null) {
+            RecommendationBottomSheet(
+                recommendation = selectedRec,
+                onDismiss = { showRecommendationSheet = false }
+            )
         }
     }
 }
@@ -187,7 +206,7 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
 }
 
 @Composable
-fun AIRecommendationsSection() {
+fun AIRecommendationsSection(onActionClick: (String) -> Unit) {
     Column {
         SectionTitle("AI Recommendations")
         
@@ -200,7 +219,8 @@ fun AIRecommendationsSection() {
                     icon = Icons.Default.Warning,
                     iconTint = BurntOrangeAccent,
                     message = "You spent 22% more on food this month",
-                    actionText = "Review"
+                    actionText = "Review",
+                    onActionClick = { onActionClick("food") }
                 )
             }
             item {
@@ -208,7 +228,8 @@ fun AIRecommendationsSection() {
                     icon = Icons.Default.Star,
                     iconTint = TanAccent,
                     message = "You may save ₹3,000 by reducing subscriptions",
-                    actionText = "View Subs"
+                    actionText = "View Subs",
+                    onActionClick = { onActionClick("subscriptions") }
                 )
             }
             item {
@@ -216,7 +237,8 @@ fun AIRecommendationsSection() {
                     icon = Icons.Default.Info,
                     iconTint = OliveAccent,
                     message = "Weekend spending spikes detected",
-                    actionText = "Analyze"
+                    actionText = "Analyze",
+                    onActionClick = { onActionClick("spikes") }
                 )
             }
         }
@@ -224,7 +246,13 @@ fun AIRecommendationsSection() {
 }
 
 @Composable
-fun RecommendationCard(icon: ImageVector, iconTint: Color, message: String, actionText: String) {
+fun RecommendationCard(
+    icon: ImageVector,
+    iconTint: Color,
+    message: String,
+    actionText: String,
+    onActionClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .width(220.dp)
@@ -245,7 +273,11 @@ fun RecommendationCard(icon: ImageVector, iconTint: Color, message: String, acti
                 text = actionText,
                 color = OliveAccent,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onActionClick() }
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
             )
         }
     }
@@ -439,6 +471,271 @@ fun ReportCard(modifier: Modifier, title: String, icon: ImageVector) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
+        }
+    }
+}
+
+// AI Recommendation Detail Structures & Premium Content
+
+data class RecommendationDetail(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val iconTint: Color,
+    val summary: String,
+    val metrics: List<Pair<String, String>>,
+    val tips: List<String>
+)
+
+val aiRecommendationsList = listOf(
+    RecommendationDetail(
+        id = "food",
+        title = "Food Expense Analysis",
+        subtitle = "Budget Alert & Recommendation",
+        icon = Icons.Default.Warning,
+        iconTint = BurntOrangeAccent,
+        summary = "Your food category spending is currently tracking 22% higher than your average monthly spend at this point. The main drivers are dining out and online food delivery services on weekends.",
+        metrics = listOf(
+            "Current Spend" to "₹9,780",
+            "Budget Limit" to "₹8,000",
+            "Deviation" to "+₹1,780 (+22%)"
+        ),
+        tips = listOf(
+            "Dining out spikes on Friday and Saturday nights contribute to 45% of the excess spend.",
+            "Delivery fees and taxes added ₹1,200 to your total this month.",
+            "💡 Tip: Try meal prepping for weekends or limit delivery orders to once a week."
+        )
+    ),
+    RecommendationDetail(
+        id = "subscriptions",
+        title = "Subscription Audit",
+        subtitle = "Potential Savings & Insights",
+        icon = Icons.Default.Star,
+        iconTint = TanAccent,
+        summary = "Our AI detected multiple recurring subscriptions, some of which show little to no recent usage. Cancelling or pausing these can immediately improve your monthly savings rate.",
+        metrics = listOf(
+            "Total Subs" to "6 Active",
+            "Monthly Spend" to "₹4,850",
+            "Potential Save" to "₹3,000/mo"
+        ),
+        tips = listOf(
+            "Unused Streaming Service: ₹999/mo (No activity detected in the last 45 days).",
+            "Premium Fitness App: ₹1,500/mo (Hardly used this month).",
+            "💡 Tip: Set up a calendar reminder to review and cancel free trials before they auto-renew."
+        )
+    ),
+    RecommendationDetail(
+        id = "spikes",
+        title = "Weekend Spending Trend",
+        subtitle = "Behavioral Spikes Detected",
+        icon = Icons.Default.Info,
+        iconTint = OliveAccent,
+        summary = "Over the last 4 weekends, your transactions show a recurring spending spike of 130% compared to weekdays. This behavior pattern is highly concentrated in Shopping and Entertainment categories.",
+        metrics = listOf(
+            "Weekday Avg" to "₹850/day",
+            "Weekend Avg" to "₹2,400/day",
+            "Top Peak" to "Saturdays (4-8 PM)"
+        ),
+        tips = listOf(
+            "Non-essential shopping is the primary driver of the weekend spike.",
+            "Entertainment accounts for 30% of weekend expenditures.",
+            "💡 Tip: Use a 'Weekend Wallet' with a set budget, or delay non-essential purchases by 24 hours."
+        )
+    )
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecommendationBottomSheet(
+    recommendation: RecommendationDetail,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceDark,
+        scrimColor = Color.Black.copy(alpha = 0.6f),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = MutedCream.copy(alpha = 0.4f)) }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.75f)
+                .padding(bottom = 24.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(NearBlack, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = recommendation.icon,
+                            contentDescription = null,
+                            tint = recommendation.iconTint,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = recommendation.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = CreamText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = recommendation.subtitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MutedCream,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(GlassSurface)
+                        .clickable { onDismiss() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = CreamText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(color = GlassBorder)
+
+            // Scrollable Content
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // Description Box
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = GlassSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = recommendation.summary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = CreamText,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                // Metrics Grid/Row
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Key Metrics",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MutedCream
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        recommendation.metrics.forEach { (label, value) ->
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                                colors = CardDefaults.cardColors(containerColor = NearBlack),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorder),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MutedCream
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = value,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when {
+                                            value.startsWith("+") -> RedReveal
+                                            value.startsWith("-") || value.contains("Save") -> OliveAccent
+                                            else -> CreamText
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Tips/Action Steps
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Actionable Insights & Details",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MutedCream
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        recommendation.tips.forEach { tip ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(GlassSurface, RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(recommendation.iconTint, RoundedCornerShape(50))
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = tip,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = CreamText
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
