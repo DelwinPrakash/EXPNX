@@ -9,16 +9,27 @@ import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.delwin.expnx.ui.AppViewModel
+import com.delwin.expnx.ui.screens.plans.Bill
 import com.delwin.expnx.ui.theme.*
 
 @Composable
 fun RecurringSubtab(viewModel: AppViewModel) {
+    val billsList by viewModel.billsList.collectAsState()
+
+    // Dynamic calculations
+    val totalCommitments = billsList.sumOf { it.amount }
+    val missedBills = billsList.filter { !it.isPaid && (it.dueDate.contains("May") || it.dueDate.contains("Overdue") || it.dueDate.contains("ago")) }
+    val upcomingBills = billsList.filter { !it.isPaid && !(it.dueDate.contains("May") || it.dueDate.contains("Overdue") || it.dueDate.contains("ago")) }
+    val activeSubscriptions = billsList.filter { it.autoPay || it.isPaid }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -37,67 +48,88 @@ fun RecurringSubtab(viewModel: AppViewModel) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Recurring Insights", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("You have ₹14,500 in fixed monthly commitments. This is 30% of your average income.", style = MaterialTheme.typography.bodyMedium, color = MutedCream)
+                    Text(
+                        text = "You have ₹${String.format("%,.0f", totalCommitments)} in fixed commitments.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedCream
+                    )
                 }
             }
         }
 
         // Missed Payments
-        item {
-            Column {
-                Text("Missed Payments", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = RedReveal.copy(alpha = 0.1f)),
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, RedReveal.copy(alpha = 0.3f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(RedReveal.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
+        if (missedBills.isNotEmpty()) {
+            item {
+                Column {
+                    Text("Missed Payments", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    missedBills.forEachIndexed { index, bill ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = RedReveal.copy(alpha = 0.1f)),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, RedReveal.copy(alpha = 0.3f))
                         ) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = RedReveal)
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(RedReveal.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Warning, contentDescription = null, tint = RedReveal)
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(bill.title, style = MaterialTheme.typography.titleMedium, color = CreamText)
+                                    Text("Due ${bill.dueDate}", style = MaterialTheme.typography.bodySmall, color = RedReveal)
+                                }
+                                Text("₹${String.format("%,.0f", bill.amount)}", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
+                            }
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Gym Membership", style = MaterialTheme.typography.titleMedium, color = CreamText)
-                            Text("Due 2 days ago", style = MaterialTheme.typography.bodySmall, color = RedReveal)
+                        if (index < missedBills.size - 1) {
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
-                        Text("₹1,200", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
         // Upcoming
-        item {
-            Column {
-                Text("Upcoming (Next 7 Days)", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                RecurringItemMock("Netflix Subscription", "Tomorrow", 199.0)
-                Spacer(modifier = Modifier.height(8.dp))
-                RecurringItemMock("Electricity Bill", "In 3 days", 2450.0)
+        if (upcomingBills.isNotEmpty()) {
+            item {
+                Column {
+                    Text("Upcoming (Next 7 Days)", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    upcomingBills.forEachIndexed { index, bill ->
+                        RecurringItemMock(title = bill.title, subtitle = bill.dueDate, amount = bill.amount)
+                        if (index < upcomingBills.size - 1) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
             }
         }
 
         // Detected Subscriptions
-        item {
-            Column {
-                Text("Detected Subscriptions", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                RecurringItemMock("Spotify Premium", "Active", 119.0)
-                Spacer(modifier = Modifier.height(8.dp))
-                RecurringItemMock("Amazon Prime", "Active", 1499.0)
+        if (activeSubscriptions.isNotEmpty()) {
+            item {
+                Column {
+                    Text("Detected Subscriptions", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    activeSubscriptions.forEachIndexed { index, bill ->
+                        RecurringItemMock(title = bill.title, subtitle = if (bill.isPaid) "Paid" else "Active", amount = bill.amount)
+                        if (index < activeSubscriptions.size - 1) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
             }
         }
     }

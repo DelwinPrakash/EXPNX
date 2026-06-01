@@ -17,6 +17,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import com.delwin.expnx.data.CategoryBudget
+import com.delwin.expnx.ui.screens.plans.Bill
+import com.delwin.expnx.ui.screens.plans.BillCategory
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 
 data class DashboardUiState(
     val totalSpent: Double = 0.0,
@@ -127,6 +133,74 @@ class AppViewModel(
         viewModelScope.launch {
             repository.deleteCategoryBudget(CategoryBudget(category = category, budgetAmount = 0.0))
         }
+    }
+
+    private val _billsList = MutableStateFlow<List<Bill>>(
+        listOf(
+            Bill(
+                title = "Electricity Bill",
+                provider = "BESCOM",
+                icon = Icons.Default.Bolt,
+                amount = 1250.0,
+                dueDate = "Tomorrow",
+                isPaid = false,
+                autoPay = true,
+                category = BillCategory.THIS_WEEK
+            ),
+            Bill(
+                title = "Internet",
+                provider = "JioFiber",
+                icon = Icons.Default.Wifi,
+                amount = 999.0,
+                dueDate = "In 3 Days",
+                isPaid = false,
+                autoPay = true,
+                category = BillCategory.THIS_WEEK
+            ),
+            Bill(
+                title = "Car EMI",
+                provider = "HDFC Bank",
+                icon = Icons.Default.DirectionsCar,
+                amount = 8500.0,
+                dueDate = "May 25",
+                isPaid = false,
+                autoPay = false,
+                category = BillCategory.LATER_THIS_MONTH
+            ),
+            Bill(
+                title = "Gym Membership",
+                provider = "Cult.fit",
+                icon = Icons.Default.FitnessCenter,
+                amount = 1700.0,
+                dueDate = "May 28",
+                isPaid = false,
+                autoPay = false,
+                category = BillCategory.LATER_THIS_MONTH
+            ),
+            Bill(
+                title = "Netflix",
+                provider = "Streaming",
+                icon = Icons.Default.LiveTv,
+                amount = 649.0,
+                dueDate = "May 02",
+                isPaid = true,
+                autoPay = true,
+                category = BillCategory.LATER_THIS_MONTH
+            )
+        )
+    )
+    val billsList: StateFlow<List<Bill>> = _billsList.asStateFlow()
+
+    fun addBill(bill: Bill) {
+        _billsList.value = _billsList.value + bill
+    }
+
+    fun removeBill(billId: String) {
+        _billsList.value = _billsList.value.filterNot { it.id == billId }
+    }
+
+    fun updateBill(updatedBill: Bill) {
+        _billsList.value = _billsList.value.map { if (it.id == updatedBill.id) updatedBill else it }
     }
 
     companion object {

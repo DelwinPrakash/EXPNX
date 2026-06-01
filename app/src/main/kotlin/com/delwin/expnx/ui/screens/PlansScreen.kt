@@ -83,7 +83,7 @@ fun PlansScreen(viewModel: AppViewModel) {
                 when (targetTab) {
                     PlanTab.BUDGETS -> BudgetsTab(viewModel)
                     PlanTab.GOALS -> GoalsTab()
-                    PlanTab.BILLS -> BillsTab()
+                    PlanTab.BILLS -> BillsTab(viewModel)
                 }
             }
         }

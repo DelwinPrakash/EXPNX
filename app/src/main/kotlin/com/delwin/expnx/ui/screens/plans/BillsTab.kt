@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delwin.expnx.ui.theme.*
+import com.delwin.expnx.ui.AppViewModel
 import kotlinx.coroutines.launch
 
 enum class BillCategory(val displayName: String) {
@@ -52,7 +53,7 @@ data class Bill(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BillsTab() {
+fun BillsTab(viewModel: AppViewModel) {
     val scrollState = rememberScrollState()
     var showAddBillDialog by remember { mutableStateOf(false) }
     var showEditBillDialog by remember { mutableStateOf(false) }
@@ -60,60 +61,7 @@ fun BillsTab() {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val billsList = remember {
-        mutableStateListOf(
-            Bill(
-                title = "Electricity Bill",
-                provider = "BESCOM",
-                icon = Icons.Default.Bolt,
-                amount = 1250.0,
-                dueDate = "Tomorrow",
-                isPaid = false,
-                autoPay = true,
-                category = BillCategory.THIS_WEEK
-            ),
-            Bill(
-                title = "Internet",
-                provider = "JioFiber",
-                icon = Icons.Default.Wifi,
-                amount = 999.0,
-                dueDate = "In 3 Days",
-                isPaid = false,
-                autoPay = true,
-                category = BillCategory.THIS_WEEK
-            ),
-            Bill(
-                title = "Car EMI",
-                provider = "HDFC Bank",
-                icon = Icons.Default.DirectionsCar,
-                amount = 8500.0,
-                dueDate = "May 25",
-                isPaid = false,
-                autoPay = false,
-                category = BillCategory.LATER_THIS_MONTH
-            ),
-            Bill(
-                title = "Gym Membership",
-                provider = "Cult.fit",
-                icon = Icons.Default.FitnessCenter,
-                amount = 1700.0,
-                dueDate = "May 28",
-                isPaid = false,
-                autoPay = false,
-                category = BillCategory.LATER_THIS_MONTH
-            ),
-            Bill(
-                title = "Netflix",
-                provider = "Streaming",
-                icon = Icons.Default.LiveTv,
-                amount = 649.0,
-                dueDate = "May 02",
-                isPaid = true,
-                autoPay = true,
-                category = BillCategory.LATER_THIS_MONTH
-            )
-        )
-    }
+    val billsList by viewModel.billsList.collectAsState()
 
     val availableIcons = listOf(
         Icons.Default.Bolt,
@@ -133,21 +81,14 @@ fun BillsTab() {
 
     val onDeleteBill: (Bill) -> Unit = { bill ->
         scope.launch {
-            val index = billsList.indexOfFirst { it.id == bill.id }
-            if (index != -1) {
-                val removedBill = billsList.removeAt(index)
-                val result = snackbarHostState.showSnackbar(
-                    message = "${bill.title} deleted",
-                    actionLabel = "Undo",
-                    duration = SnackbarDuration.Short
-                )
-                if (result == SnackbarResult.ActionPerformed) {
-                    if (index <= billsList.size) {
-                        billsList.add(index, removedBill)
-                    } else {
-                        billsList.add(removedBill)
-                    }
-                }
+            viewModel.removeBill(bill.id)
+            val result = snackbarHostState.showSnackbar(
+                message = "${bill.title} deleted",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.addBill(bill)
             }
         }
     }
@@ -230,10 +171,7 @@ fun BillsTab() {
                                 isPaid = bill.isPaid,
                                 autoPay = bill.autoPay,
                                 onClick = {
-                                    val idx = billsList.indexOfFirst { it.id == bill.id }
-                                    if (idx != -1) {
-                                        billsList[idx] = bill.copy(isPaid = !bill.isPaid)
-                                    }
+                                    viewModel.updateBill(bill.copy(isPaid = !bill.isPaid))
                                 }
                             )
                         }
@@ -260,10 +198,7 @@ fun BillsTab() {
                                 isPaid = bill.isPaid,
                                 autoPay = bill.autoPay,
                                 onClick = {
-                                    val idx = billsList.indexOfFirst { it.id == bill.id }
-                                    if (idx != -1) {
-                                        billsList[idx] = bill.copy(isPaid = !bill.isPaid)
-                                    }
+                                    viewModel.updateBill(bill.copy(isPaid = !bill.isPaid))
                                 }
                             )
                         }
@@ -290,10 +225,7 @@ fun BillsTab() {
                                 isPaid = bill.isPaid,
                                 autoPay = bill.autoPay,
                                 onClick = {
-                                    val idx = billsList.indexOfFirst { it.id == bill.id }
-                                    if (idx != -1) {
-                                        billsList[idx] = bill.copy(isPaid = !bill.isPaid)
-                                    }
+                                    viewModel.updateBill(bill.copy(isPaid = !bill.isPaid))
                                 }
                             )
                         }
@@ -519,7 +451,7 @@ fun BillsTab() {
                         TextButton(
                             onClick = {
                                 if (title.isNotBlank() && amount.toDoubleOrNull() != null) {
-                                    billsList.add(
+                                    viewModel.addBill(
                                         Bill(
                                             title = title,
                                             provider = provider.ifBlank { "Unknown" },
@@ -743,9 +675,8 @@ fun BillsTab() {
                         TextButton(
                             onClick = {
                                 if (title.isNotBlank() && amount.toDoubleOrNull() != null) {
-                                    val idx = billsList.indexOfFirst { it.id == billToEdit!!.id }
-                                    if (idx != -1) {
-                                        billsList[idx] = billToEdit!!.copy(
+                                    viewModel.updateBill(
+                                        billToEdit!!.copy(
                                             title = title,
                                             provider = provider.ifBlank { "Unknown" },
                                             icon = selectedIcon,
@@ -755,7 +686,7 @@ fun BillsTab() {
                                             autoPay = autoPay,
                                             category = category
                                         )
-                                    }
+                                    )
                                     showEditBillDialog = false
                                 }
                             },
