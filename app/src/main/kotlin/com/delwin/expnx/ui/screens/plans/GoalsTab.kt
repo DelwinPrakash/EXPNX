@@ -24,14 +24,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 import kotlinx.coroutines.launch
@@ -46,13 +47,11 @@ data class Goal(
     val monthlySuggestion: Double
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GoalsTab(viewModel: AppViewModel) {
     val scrollState = rememberScrollState()
     var showAddGoalDialog by remember { mutableStateOf(false) }
 
-    var selectedGoalForMenu by remember { mutableStateOf<Goal?>(null) }
     var showEditGoalDialog by remember { mutableStateOf(false) }
     var goalToEdit by remember { mutableStateOf<Goal?>(null) }
 
@@ -78,11 +77,7 @@ fun GoalsTab(viewModel: AppViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp)
-                .blur(if (selectedGoalForMenu != null) 12.dp else 0.dp)
-                .graphicsLayer {
-                    alpha = if (selectedGoalForMenu != null) 0.4f else 1.0f
-                },
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // AI Suggestion
@@ -195,22 +190,36 @@ fun GoalsTab(viewModel: AppViewModel) {
             }
 
             goalsList.forEach { goal ->
-                GoalCard(
-                    title = goal.title,
-                    icon = goal.icon,
-                    targetAmount = goal.targetAmount,
-                    savedAmount = goal.savedAmount,
-                    predictedDate = goal.predictedDate,
-                    monthlySuggestion = goal.monthlySuggestion,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .combinedClickable(
-                            onClick = { /* normal click is ignored or customizable */ },
-                            onLongClick = {
-                                selectedGoalForMenu = goal
+                key(goal.id) {
+                    SwipeableGoalRow(
+                        onDelete = {
+                            scope.launch {
+                                viewModel.removeGoal(goal.id)
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "'${goal.title}' deleted",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.addGoal(goal)
+                                }
                             }
+                        },
+                        onEdit = {
+                            goalToEdit = goal
+                            showEditGoalDialog = true
+                        }
+                    ) {
+                        GoalCard(
+                            title = goal.title,
+                            icon = goal.icon,
+                            targetAmount = goal.targetAmount,
+                            savedAmount = goal.savedAmount,
+                            predictedDate = goal.predictedDate,
+                            monthlySuggestion = goal.monthlySuggestion
                         )
-                )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(80.dp))
@@ -391,84 +400,7 @@ fun GoalsTab(viewModel: AppViewModel) {
         }
     }
 
-    if (selectedGoalForMenu != null) {
-        val focusedGoal = selectedGoalForMenu!!
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.65f))
-                .clickable { selectedGoalForMenu = null },
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .clickable(enabled = false) {}, // prevent click-through
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // High fidelity scaled focused card
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            scaleX = 1.02f
-                            scaleY = 1.02f
-                        }
-                ) {
-                    GoalCard(
-                        title = focusedGoal.title,
-                        icon = focusedGoal.icon,
-                        targetAmount = focusedGoal.targetAmount,
-                        savedAmount = focusedGoal.savedAmount,
-                        predictedDate = focusedGoal.predictedDate,
-                        monthlySuggestion = focusedGoal.monthlySuggestion
-                    )
-                }
 
-                // WhatsApp iOS style vertical floating menu card
-                Card(
-                    modifier = Modifier.width(220.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, GlassBorder)
-                ) {
-                    Column {
-                        DropdownMenuItem(
-                            text = { Text("Edit Goal", color = CreamText, fontWeight = FontWeight.Medium) },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = OliveAccent) },
-                            onClick = {
-                                goalToEdit = focusedGoal
-                                showEditGoalDialog = true
-                                selectedGoalForMenu = null
-                            }
-                        )
-                        HorizontalDivider(color = GlassBorder)
-                        DropdownMenuItem(
-                            text = { Text("Delete Goal", color = RedReveal, fontWeight = FontWeight.Medium) },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RedReveal) },
-                            onClick = {
-                                scope.launch {
-                                    val deletedGoal = focusedGoal
-                                    viewModel.removeGoal(deletedGoal.id)
-                                    selectedGoalForMenu = null
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = "'${deletedGoal.title}' deleted",
-                                        actionLabel = "Undo",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        viewModel.addGoal(deletedGoal)
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     if (showEditGoalDialog && goalToEdit != null) {
         val currentGoal = goalToEdit!!
@@ -748,3 +680,71 @@ fun GoalCard(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableGoalRow(
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            when (it) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onDelete()
+                    true
+                }
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onEdit()
+                    false
+                }
+                else -> false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val isDeleting = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+            val isEditing = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
+            
+            val backgroundColor by animateColorAsState(
+                targetValue = when {
+                    isDeleting -> RedReveal
+                    isEditing -> TanAccent
+                    else -> Color.Transparent
+                },
+                animationSpec = tween(300)
+            )
+            
+            val iconScale by animateFloatAsState(
+                targetValue = if (isDeleting || isEditing) 1.2f else 0.0f,
+                animationSpec = tween(300)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 6.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(backgroundColor)
+                    .padding(horizontal = 24.dp),
+                contentAlignment = if (isDeleting) Alignment.CenterEnd else Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = if (isDeleting) Icons.Default.Delete else Icons.Default.Edit,
+                    contentDescription = if (isDeleting) "Delete" else "Edit",
+                    tint = if (isDeleting) CreamText else NearBlack,
+                    modifier = Modifier.scale(iconScale)
+                )
+            }
+        },
+        modifier = Modifier.padding(vertical = 4.dp),
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        content = { content() }
+    )
+}
+
