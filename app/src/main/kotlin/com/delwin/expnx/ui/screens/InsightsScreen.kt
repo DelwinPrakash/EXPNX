@@ -27,10 +27,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
+import com.delwin.expnx.data.Expense
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(viewModel: AppViewModel) {
+    val allExpenses by viewModel.allExpenses.collectAsState()
     var selectedTimeRange by remember { mutableStateOf(1) } // 0: Weekly, 1: Monthly, 2: Yearly
     var showRecommendationSheet by remember { mutableStateOf(false) }
     var selectedRecommendationId by remember { mutableStateOf<String?>(null) }
@@ -59,7 +62,7 @@ fun InsightsScreen(viewModel: AppViewModel) {
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
             // Spending Trends
-            item { SpendingTrendsSection(selectedTimeRange) { selectedTimeRange = it } }
+            item { SpendingTrendsSection(allExpenses, selectedTimeRange) { selectedTimeRange = it } }
 
             // AI Recommendations
             item {
@@ -103,7 +106,22 @@ fun SectionTitle(title: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> Unit) {
+fun SpendingTrendsSection(
+    expenses: List<Expense>,
+    selectedTimeRange: Int,
+    onTimeRangeSelected: (Int) -> Unit
+) {
+    val aggregatedValues = remember(expenses, selectedTimeRange) {
+        when (selectedTimeRange) {
+            0 -> getWeeklySpending(expenses)
+            2 -> getYearlySpending(expenses)
+            else -> getMonthlySpending(expenses)
+        }
+    }
+    
+    val maxVal = remember(aggregatedValues) { aggregatedValues.maxOrNull() ?: 0.0 }
+    val cleanMax = remember(maxVal) { roundUpToCleanMax(maxVal) }
+    
     Column {
         SectionTitle("Spending Trends")
         
@@ -151,10 +169,14 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
                 .padding(16.dp)
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
-                val yLabels = when (selectedTimeRange) {
-                    0 -> listOf("₹10k", "₹7.5k", "₹5k", "₹2.5k", "₹0")
-                    2 -> listOf("₹5L", "₹3.75L", "₹2.5L", "₹1.25L", "₹0")
-                    else -> listOf("₹40k", "₹30k", "₹20k", "₹10k", "₹0")
+                val yLabels = remember(cleanMax) {
+                    listOf(
+                        formatAmount(cleanMax),
+                        formatAmount(cleanMax * 0.75),
+                        formatAmount(cleanMax * 0.5),
+                        formatAmount(cleanMax * 0.25),
+                        formatAmount(0.0)
+                    )
                 }
                 
                 // Y-Axis
@@ -192,8 +214,8 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
                             .fillMaxWidth()
                     ) {
                         val path = Path()
-                        val steps = 6
-                        val stepX = size.width / steps
+                        val steps = aggregatedValues.size - 1
+                        val stepX = if (steps > 0) size.width / steps else size.width
                         
                         // Draw grid lines
                         val gridLinesCount = 4
@@ -207,26 +229,11 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
                             )
                         }
 
-                        val points = when (selectedTimeRange) {
-                            0 -> listOf( // Weekly - Spike at weekends
-                                Offset(0f, size.height * 0.7f),
-                                Offset(stepX * 1.5f, size.height * 0.75f),
-                                Offset(stepX * 3.5f, size.height * 0.3f), // Weekend spike
-                                Offset(stepX * 5f, size.height * 0.8f),
-                                Offset(size.width, size.height * 0.6f)
-                            )
-                            2 -> listOf( // Yearly - Holiday season peak
-                                Offset(0f, size.height * 0.5f),
-                                Offset(stepX * 2f, size.height * 0.6f),
-                                Offset(stepX * 4f, size.height * 0.7f),
-                                Offset(size.width, size.height * 0.2f)
-                            )
-                            else -> listOf( // Monthly (Default)
-                                Offset(0f, size.height * 0.8f),
-                                Offset(stepX * 2f, size.height * 0.5f),
-                                Offset(stepX * 4f, size.height * 0.3f),
-                                Offset(size.width, size.height * 0.2f)
-                            )
+                        val points = aggregatedValues.mapIndexed { i, valAtI ->
+                            val ratio = if (cleanMax > 0.0) (valAtI / cleanMax) else 0.0
+                            val x = i * stepX
+                            val y = size.height - (size.height * 0.1f) - (size.height * 0.8f * ratio.toFloat())
+                            Offset(x, y)
                         }
 
                         if (points.isNotEmpty()) {
@@ -258,7 +265,7 @@ fun SpendingTrendsSection(selectedTimeRange: Int, onTimeRangeSelected: (Int) -> 
 
                     val xLabels = when (selectedTimeRange) {
                         0 -> listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                        2 -> listOf("Jan", "Mar", "May", "Jul", "Sep", "Nov")
+                        2 -> listOf("Jan", "", "Mar", "", "May", "", "Jul", "", "Sep", "", "Nov", "")
                         else -> listOf("Wk 1", "Wk 2", "Wk 3", "Wk 4")
                     }
 
@@ -814,3 +821,139 @@ fun RecommendationBottomSheet(
         }
     }
 }
+
+private fun getWeeklySpending(expenses: List<Expense>): List<Double> {
+    val weeklyValues = DoubleArray(7) { 0.0 }
+    val now = Calendar.getInstance()
+    val dayOfWeek = now.get(Calendar.DAY_OF_WEEK)
+    val daysToMonday = if (dayOfWeek == Calendar.SUNDAY) -6 else Calendar.MONDAY - dayOfWeek
+    
+    val startOfWeekCal = Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, daysToMonday)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val startOfWeek = startOfWeekCal.timeInMillis
+    val endOfWeek = startOfWeek + 7L * 24 * 60 * 60 * 1000 - 1
+
+    for (expense in expenses) {
+        if (expense.date in startOfWeek..endOfWeek) {
+            val expCal = Calendar.getInstance().apply { timeInMillis = expense.date }
+            val expDayOfWeek = expCal.get(Calendar.DAY_OF_WEEK)
+            val index = if (expDayOfWeek == Calendar.SUNDAY) 6 else expDayOfWeek - 2
+            if (index in 0..6) {
+                weeklyValues[index] += expense.amount
+            }
+        }
+    }
+    return weeklyValues.toList()
+}
+
+private fun getMonthlySpending(expenses: List<Expense>): List<Double> {
+    val monthlyValues = DoubleArray(4) { 0.0 }
+    val startOfMonthCal = Calendar.getInstance().apply {
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val startOfMonth = startOfMonthCal.timeInMillis
+    val endOfMonthCal = Calendar.getInstance().apply {
+        timeInMillis = startOfMonth
+        set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH))
+        set(Calendar.HOUR_OF_DAY, 23)
+        set(Calendar.MINUTE, 59)
+        set(Calendar.SECOND, 59)
+        set(Calendar.MILLISECOND, 999)
+    }
+    val endOfMonth = endOfMonthCal.timeInMillis
+
+    for (expense in expenses) {
+        if (expense.date in startOfMonth..endOfMonth) {
+            val expCal = Calendar.getInstance().apply { timeInMillis = expense.date }
+            val dayOfMonth = expCal.get(Calendar.DAY_OF_MONTH)
+            val index = when {
+                dayOfMonth <= 7 -> 0
+                dayOfMonth <= 14 -> 1
+                dayOfMonth <= 21 -> 2
+                else -> 3
+            }
+            monthlyValues[index] += expense.amount
+        }
+    }
+    return monthlyValues.toList()
+}
+
+private fun getYearlySpending(expenses: List<Expense>): List<Double> {
+    val yearlyValues = DoubleArray(12) { 0.0 }
+    val startOfYearCal = Calendar.getInstance().apply {
+        set(Calendar.MONTH, Calendar.JANUARY)
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val startOfYear = startOfYearCal.timeInMillis
+    val endOfYearCal = Calendar.getInstance().apply {
+        timeInMillis = startOfYear
+        set(Calendar.MONTH, Calendar.DECEMBER)
+        set(Calendar.DAY_OF_MONTH, 31)
+        set(Calendar.HOUR_OF_DAY, 23)
+        set(Calendar.MINUTE, 59)
+        set(Calendar.SECOND, 59)
+        set(Calendar.MILLISECOND, 999)
+    }
+    val endOfYear = endOfYearCal.timeInMillis
+
+    for (expense in expenses) {
+        if (expense.date in startOfYear..endOfYear) {
+            val expCal = Calendar.getInstance().apply { timeInMillis = expense.date }
+            val month = expCal.get(Calendar.MONTH)
+            if (month in 0..11) {
+                yearlyValues[month] += expense.amount
+            }
+        }
+    }
+    return yearlyValues.toList()
+}
+
+private fun roundUpToCleanMax(value: Double): Double {
+    if (value <= 0) return 1000.0
+    val log = Math.log10(value)
+    val power = Math.pow(10.0, Math.ceil(log) - 1.0)
+    val ratio = value / power
+    val roundedRatio = when {
+        ratio <= 1.0 -> 1.0
+        ratio <= 2.0 -> 2.0
+        ratio <= 4.0 -> 4.0
+        ratio <= 5.0 -> 5.0
+        ratio <= 8.0 -> 8.0
+        else -> 10.0
+    }
+    return roundedRatio * power
+}
+
+private fun formatAmount(value: Double): String {
+    return when {
+        value >= 100000.0 -> {
+            val l = value / 100000.0
+            val rounded = Math.round(l * 10.0) / 10.0
+            val clean = if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
+            "₹${clean}L"
+        }
+        value >= 1000.0 -> {
+            val k = value / 1000.0
+            val rounded = Math.round(k * 10.0) / 10.0
+            val clean = if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
+            "₹${clean}k"
+        }
+        else -> {
+            "₹${value.toInt()}"
+        }
+    }
+}
+
