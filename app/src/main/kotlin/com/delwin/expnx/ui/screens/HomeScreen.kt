@@ -28,6 +28,8 @@ import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.components.SetBudgetDialog
 import com.delwin.expnx.ui.components.ExpenseItem
 import com.delwin.expnx.ui.theme.*
+import com.delwin.expnx.ui.screens.plans.Bill
+import com.delwin.expnx.ui.screens.plans.BillCategory
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +39,7 @@ fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}) {
     val recentExpenses by viewModel.recentExpenses.collectAsState()
     val budget by viewModel.budget.collectAsState()
     val allExpenses by viewModel.allExpenses.collectAsState()
+    val billsList by viewModel.billsList.collectAsState()
     
     var showSetBudgetDialog by remember { mutableStateOf(false) }
 
@@ -66,8 +69,9 @@ fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}) {
             }
             
             item {
-                UpcomingPaymentsSection()
+                UpcomingPaymentsSection(bills = billsList)
             }
+
             
             item {
                 RecentTransactionsHeader(onSeeAllClick)
@@ -355,14 +359,11 @@ fun BudgetProgressSection(allExpenses: List<Expense>) {
     }
 }
 
-data class PaymentMock(val name: String, val amount: Double, val daysLeft: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
-
 @Composable
-fun UpcomingPaymentsSection() {
-    val payments = listOf(
-        PaymentMock("Netflix", 199.0, 2, Icons.Default.Movie),
-        PaymentMock("Electricity", 1450.0, 5, Icons.Default.FlashOn)
-    )
+fun UpcomingPaymentsSection(bills: List<Bill>) {
+    val unpaidBills = remember(bills) {
+        bills.filter { !it.isPaid }
+    }
 
     Column(
         modifier = Modifier
@@ -378,42 +379,121 @@ fun UpcomingPaymentsSection() {
         )
         Spacer(modifier = Modifier.height(12.dp))
         
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(payments) { payment ->
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                    modifier = Modifier.width(140.dp)
+        if (unpaidBills.isEmpty()) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(NearBlack, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(payment.icon, contentDescription = null, tint = BurntOrangeAccent, modifier = Modifier.size(18.dp))
-                            }
-                            Text("In ${payment.daysLeft}d", style = MaterialTheme.typography.labelSmall, color = RedReveal)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(NearBlack, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = OliveAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "All Caught Up!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = CreamText,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "No upcoming payments due.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MutedCream
+                        )
+                    }
+                }
+            }
+        } else {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(unpaidBills) { bill ->
+                    val (badgeText, badgeColor) = remember(bill) {
+                        when {
+                            bill.category == BillCategory.OVERDUE -> "Overdue" to RedReveal
+                            bill.dueDate.contains("day", ignoreCase = true) || 
+                            bill.dueDate.contains("tomorrow", ignoreCase = true) ||
+                            bill.dueDate.contains("today", ignoreCase = true) -> bill.dueDate to RedReveal
+                            else -> bill.dueDate to TanAccent
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(payment.name, style = MaterialTheme.typography.bodyMedium, color = CreamText)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("₹${String.format("%,.0f", payment.amount)}", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
+                    }
+
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                        modifier = Modifier.width(140.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(NearBlack, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = bill.icon,
+                                        contentDescription = null,
+                                        tint = BurntOrangeAccent,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Text(
+                                    text = badgeText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = badgeColor,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(start = 4.dp).weight(1f, fill = false)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = bill.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = CreamText,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "₹${String.format("%,.0f", bill.amount)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = CreamText,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun RecentTransactionsHeader(onSeeAllClick: () -> Unit = {}) {
