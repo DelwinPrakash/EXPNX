@@ -44,63 +44,66 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentDestination = navBackStackEntry?.destination
-                        NavigationBar(
-                            containerColor = SurfaceDark,
-                            contentColor = CreamText,
-                            tonalElevation = 8.dp
-                        ) {
-                            bottomNavItems.forEach { screen ->
-                                val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                
-                                val scale by animateFloatAsState(
-                                    targetValue = if (selected) 1.2f else 1.0f,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessLow
+                        
+                        if (currentDestination?.route != Screen.Notifications.route) {
+                            NavigationBar(
+                                containerColor = SurfaceDark,
+                                contentColor = CreamText,
+                                tonalElevation = 8.dp
+                            ) {
+                                bottomNavItems.forEach { screen ->
+                                    val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                    
+                                    val scale by animateFloatAsState(
+                                        targetValue = if (selected) 1.2f else 1.0f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessLow
+                                        )
                                     )
-                                )
 
-                                NavigationBarItem(
-                                    icon = {
-                                        Box(modifier = Modifier.scale(scale)) {
-                                            Icon(screen.icon, contentDescription = null)
-                                        }
-                                    },
-                                    label = {
-                                        AnimatedVisibility(
-                                            visible = selected,
-                                            enter = fadeIn() + expandVertically(),
-                                            exit = fadeOut() + shrinkVertically()
-                                        ) {
-                                            Text(
-                                                text = screen.title,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    },
-                                    selected = selected,
-                                    onClick = {
-                                        if (screen.route == Screen.Add.route) {
-                                            showAddSheet = true
-                                        } else {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
+                                    NavigationBarItem(
+                                        icon = {
+                                            Box(modifier = Modifier.scale(scale)) {
+                                                Icon(screen.icon, contentDescription = null)
                                             }
-                                        }
-                                    },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = NearBlack,
-                                        selectedTextColor = OliveAccent,
-                                        indicatorColor = OliveAccent,
-                                        unselectedIconColor = MutedCream,
-                                        unselectedTextColor = MutedCream
+                                        },
+                                        label = {
+                                            AnimatedVisibility(
+                                                visible = selected,
+                                                enter = fadeIn() + expandVertically(),
+                                                exit = fadeOut() + shrinkVertically()
+                                            ) {
+                                                Text(
+                                                    text = screen.title,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        },
+                                        selected = selected,
+                                        onClick = {
+                                            if (screen.route == Screen.Add.route) {
+                                                showAddSheet = true
+                                            } else {
+                                                navController.navigate(screen.route) {
+                                                    popUpTo(navController.graph.findStartDestination().id) {
+                                                        saveState = true
+                                                    }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+                                            }
+                                        },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = NearBlack,
+                                            selectedTextColor = OliveAccent,
+                                            indicatorColor = OliveAccent,
+                                            unselectedIconColor = MutedCream,
+                                            unselectedTextColor = MutedCream
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }
