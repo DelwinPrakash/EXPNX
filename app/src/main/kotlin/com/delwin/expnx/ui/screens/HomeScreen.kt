@@ -34,7 +34,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}) {
+fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}, onNotificationClick: () -> Unit = {}) {
     val totalSpent by viewModel.totalSpentThisMonth.collectAsState()
     val recentExpenses by viewModel.recentExpenses.collectAsState()
     val budget by viewModel.budget.collectAsState()
@@ -53,7 +53,7 @@ fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}) {
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
-                HeaderSection()
+                HeaderSection(onNotificationClick = onNotificationClick)
             }
             
             item {
@@ -115,7 +115,7 @@ fun HomeScreen(viewModel: AppViewModel, onSeeAllClick: () -> Unit = {}) {
 }
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(onNotificationClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -137,7 +137,7 @@ fun HeaderSection() {
             fontWeight = FontWeight.Bold
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconButton(onClick = { /* Mock */ }) {
+            IconButton(onClick = onNotificationClick) {
                 Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = CreamText)
             }
             // IconButton(onClick = { /* Mock */ }) {

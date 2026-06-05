@@ -127,6 +127,9 @@ class MainActivity : ComponentActivity() {
                                         launchSingleTop = true
                                         restoreState = true
                                     }
+                                },
+                                onNotificationClick = {
+                                    navController.navigate(Screen.Notifications.route)
                                 }
                             )
                         }
@@ -141,6 +144,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screen.Insights.route) {
                             InsightsScreen(viewModel)
+                        }
+                        composable(Screen.Notifications.route) {
+                            NotificationsScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }
