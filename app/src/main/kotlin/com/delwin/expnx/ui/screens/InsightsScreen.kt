@@ -34,6 +34,8 @@ import java.util.Calendar
 @Composable
 fun InsightsScreen(viewModel: AppViewModel) {
     val allExpenses by viewModel.allExpenses.collectAsState()
+    val totalSpentThisMonth by viewModel.totalSpentThisMonth.collectAsState()
+    val budget by viewModel.budget.collectAsState()
     var selectedTimeRange by remember { mutableStateOf(1) } // 0: Weekly, 1: Monthly, 2: Yearly
     var showRecommendationSheet by remember { mutableStateOf(false) }
     var selectedRecommendationId by remember { mutableStateOf<String?>(null) }
@@ -76,7 +78,7 @@ fun InsightsScreen(viewModel: AppViewModel) {
             item { PredictionsSection() }
 
             // Financial Health
-            item { FinancialHealthSection() }
+            item { FinancialHealthSection(totalSpentThisMonth, budget, allExpenses) }
 
             // Reports
             item { ReportsSection() }
@@ -433,7 +435,48 @@ fun PredictionItem(title: String, value: String, icon: ImageVector, tint: Color 
 }
 
 @Composable
-fun FinancialHealthSection() {
+fun FinancialHealthSection(
+    totalSpentThisMonth: Double,
+    budget: Double?,
+    expenses: List<Expense>
+) {
+    val effectiveBudget = budget ?: 50000.0 // Default fallback budget
+    
+    val spentRatio = if (effectiveBudget > 0) (totalSpentThisMonth / effectiveBudget) else 0.0
+    val score = ((1.0 - spentRatio) * 100).toInt().coerceIn(0, 100)
+    
+    val status = when {
+        score >= 80 -> "Excellent"
+        score >= 60 -> "Good"
+        score >= 40 -> "Fair"
+        else -> "Needs Work"
+    }
+    
+    val savingRatio = ((1.0 - spentRatio) * 100).toInt().coerceAtLeast(0)
+    
+    val currentMonthExpenses = expenses.filter { expense ->
+        val calendar = java.util.Calendar.getInstance()
+        val currentMonth = calendar.get(java.util.Calendar.MONTH)
+        val currentYear = calendar.get(java.util.Calendar.YEAR)
+        calendar.timeInMillis = expense.date
+        calendar.get(java.util.Calendar.MONTH) == currentMonth && calendar.get(java.util.Calendar.YEAR) == currentYear
+    }
+    
+    val billsSpent = currentMonthExpenses.filter { it.category == com.delwin.expnx.data.Category.BILLS }.sumOf { it.amount }
+    val debtRatio = if (totalSpentThisMonth > 0) ((billsSpent / totalSpentThisMonth) * 100).toInt().coerceIn(0, 100) else 0
+    
+    val budgetDiscipline = when {
+        score >= 70 -> "High"
+        score >= 40 -> "Medium"
+        else -> "Low"
+    }
+    
+    val recurringBurden = when {
+        debtRatio > 40 -> "High"
+        debtRatio > 20 -> "Medium"
+        else -> "Low"
+    }
+
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         SectionTitle("Financial Health", modifier = Modifier.padding(horizontal = 0.dp))
         
@@ -470,27 +513,33 @@ fun FinancialHealthSection() {
                         drawArc(
                             brush = Brush.linearGradient(listOf(OliveAccent, TanAccent)),
                             startAngle = 135f,
-                            sweepAngle = 270f * 0.85f,
+                            sweepAngle = 270f * (score / 100f),
                             useCenter = false,
                             style = Stroke(width = 12.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("85", color = CreamText, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                        Text("Excellent", color = OliveAccent, style = MaterialTheme.typography.labelSmall)
+                        Text("$score", color = CreamText, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                        val statusColor = when (status) {
+                            "Excellent" -> OliveAccent
+                            "Good" -> TanAccent
+                            "Fair" -> BurntOrangeAccent
+                            else -> RedReveal
+                        }
+                        Text(status, color = statusColor, style = MaterialTheme.typography.labelSmall)
                     }
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    HealthComponent("Saving Ratio", "35%", Icons.Default.Savings)
-                    HealthComponent("Debt Ratio", "12%", Icons.Default.MoneyOff)
+                    HealthComponent("Saving Ratio", "$savingRatio%", Icons.Default.Savings)
+                    HealthComponent("Debt Ratio", "$debtRatio%", Icons.Default.MoneyOff)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    HealthComponent("Budget Discipline", "High", Icons.Default.TrackChanges)
-                    HealthComponent("Recurring Burden", "Low", Icons.Default.Loop)
+                    HealthComponent("Budget Discipline", budgetDiscipline, Icons.Default.TrackChanges)
+                    HealthComponent("Recurring Burden", recurringBurden, Icons.Default.Loop)
                 }
             }
         }
