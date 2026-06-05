@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.*
 import com.delwin.expnx.ui.AppViewModel
 import com.delwin.expnx.ui.theme.*
 import com.delwin.expnx.data.Expense
@@ -445,6 +446,17 @@ fun FinancialHealthSection(
     val spentRatio = if (effectiveBudget > 0) (totalSpentThisMonth / effectiveBudget) else 0.0
     val score = ((1.0 - spentRatio) * 100).toInt().coerceIn(0, 100)
     
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+    
+    val targetProgress = if (isVisible) (score / 100f) else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing)
+    )
+    
     val status = when {
         score >= 80 -> "Excellent"
         score >= 60 -> "Good"
@@ -513,13 +525,13 @@ fun FinancialHealthSection(
                         drawArc(
                             brush = Brush.linearGradient(listOf(OliveAccent, TanAccent)),
                             startAngle = 135f,
-                            sweepAngle = 270f * (score / 100f),
+                            sweepAngle = 270f * animatedProgress,
                             useCenter = false,
                             style = Stroke(width = 12.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$score", color = CreamText, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                        Text("${(animatedProgress * 100).toInt()}", color = CreamText, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
                         val statusColor = when (status) {
                             "Excellent" -> OliveAccent
                             "Good" -> TanAccent
