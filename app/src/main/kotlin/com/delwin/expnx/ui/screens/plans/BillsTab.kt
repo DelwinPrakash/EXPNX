@@ -487,7 +487,9 @@ fun BillsTab(viewModel: AppViewModel) {
                                         text = cat.displayName,
                                         color = if (isSelected) NearBlack else CreamText,
                                         fontWeight = FontWeight.Medium,
-                                        style = MaterialTheme.typography.bodySmall
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -711,7 +713,9 @@ fun BillsTab(viewModel: AppViewModel) {
                                         text = cat.displayName,
                                         color = if (isSelected) NearBlack else CreamText,
                                         fontWeight = FontWeight.Medium,
-                                        style = MaterialTheme.typography.bodySmall
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
