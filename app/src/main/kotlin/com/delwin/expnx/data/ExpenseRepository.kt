@@ -5,11 +5,13 @@ import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import com.delwin.expnx.ui.screens.plans.Bill
 import com.delwin.expnx.ui.screens.plans.Goal
+import com.delwin.expnx.ui.screens.NotificationItem
 
 class ExpenseRepository(
     private val expenseDao: ExpenseDao,
     private val billDao: BillDao,
-    private val goalDao: GoalDao
+    private val goalDao: GoalDao,
+    private val notificationDao: NotificationDao
 ) {
     val allExpenses: Flow<List<Expense>> = expenseDao.getAllExpenses()
 
@@ -76,4 +78,17 @@ class ExpenseRepository(
     suspend fun deleteGoal(goal: Goal) = goalDao.deleteGoal(goal.toEntity())
 
     suspend fun deleteGoalById(goalId: String) = goalDao.deleteGoalById(goalId)
+
+    val allNotifications: Flow<List<NotificationItem>> = notificationDao.getAllNotifications().map { list ->
+        list.map { it.toNotificationItem() }
+    }
+
+    suspend fun insertNotification(notification: NotificationItem, timestamp: Long, iconName: String) =
+        notificationDao.insertNotification(notification.toEntity(timestamp, iconName))
+
+    suspend fun deleteNotificationById(id: String) = notificationDao.deleteNotificationById(id)
+
+    suspend fun markNotificationAsRead(id: String) = notificationDao.markAsRead(id)
+
+    suspend fun markNotificationAsAdded(id: String) = notificationDao.markAsAdded(id)
 }

@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import com.delwin.expnx.ui.screens.NotificationItem
+import kotlinx.coroutines.flow.first
 
 data class DashboardUiState(
     val totalSpent: Double = 0.0,
@@ -35,6 +37,19 @@ class AppViewModel(
     private val repository: ExpenseRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
+
+    data class PendingSms(val id: String?, val amount: Double)
+
+    private val _pendingSms = MutableStateFlow<PendingSms?>(null)
+    val pendingSms = _pendingSms.asStateFlow()
+
+    fun setPendingSms(id: String?, amount: Double?) {
+        _pendingSms.value = if (amount != null) PendingSms(id, amount) else null
+    }
+
+    val notifications: StateFlow<List<NotificationItem>> = repository.allNotifications
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 
     val allExpenses: StateFlow<List<Expense>> = repository.allExpenses
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -78,6 +93,11 @@ class AppViewModel(
     fun saveExpense(amount: Double, category: Category, description: String, date: Long) {
         viewModelScope.launch {
             repository.insertExpense(Expense(amount = amount, category = category, description = description, date = date))
+            
+            _pendingSms.value?.id?.let { id ->
+                repository.markNotificationAsAdded(id)
+            }
+            _pendingSms.value = null
         }
     }
 
@@ -175,6 +195,18 @@ class AppViewModel(
     fun updateGoal(updatedGoal: Goal) {
         viewModelScope.launch {
             repository.updateGoal(updatedGoal)
+        }
+    }
+
+    fun deleteNotification(notification: NotificationItem) {
+        viewModelScope.launch {
+            repository.deleteNotificationById(notification.id)
+        }
+    }
+
+    fun markNotificationAsRead(id: String) {
+        viewModelScope.launch {
+            repository.markNotificationAsRead(id)
         }
     }
 

@@ -15,8 +15,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.delwin.expnx.ui.theme.*
+import com.delwin.expnx.ui.AppViewModel
 
 data class NotificationItem(
     val id: String,
@@ -32,20 +35,27 @@ data class NotificationItem(
     val description: String,
     val time: String,
     val icon: ImageVector,
-    val isUnread: Boolean = false
+    val isUnread: Boolean = false,
+    val amount: Double? = null,
+    val isAdded: Boolean = false
 )
 
-val mockNotifications = listOf(
-    NotificationItem("1", "Salary Credited", "₹1,50,000 has been credited to your account.", "2h ago", Icons.Default.AttachMoney, true),
-    NotificationItem("2", "Upcoming Bill", "Netflix subscription is due tomorrow.", "5h ago", Icons.Default.DateRange, true),
-    NotificationItem("3", "Budget Alert", "You've spent 80% of your Food budget.", "1d ago", Icons.Default.Warning, false),
-    NotificationItem("4", "System Update", "New features added to EXPNX. Check them out!", "2d ago", Icons.Default.Info, false)
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationsScreen(onBack: () -> Unit) {
-    val notifications = remember { mutableStateListOf<NotificationItem>().apply { addAll(mockNotifications) } }
+fun NotificationsScreen(
+    viewModel: AppViewModel,
+    onBack: () -> Unit
+) {
+    val notifications by viewModel.notifications.collectAsState()
+
+    LaunchedEffect(notifications) {
+        notifications.forEach {
+            if (it.isUnread) {
+                viewModel.markNotificationAsRead(it.id)
+            }
+        }
+    }
 
     Scaffold(
         containerColor = NearBlack,
@@ -61,52 +71,92 @@ fun NotificationsScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(notifications, key = { it.id }) { notification ->
-                val dismissState = rememberSwipeToDismissBoxState(
-                    confirmValueChange = { dismissValue ->
-                        if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
-                            notifications.remove(notification)
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                )
-
-                SwipeToDismissBox(
-                    state = dismissState,
-                    backgroundContent = {
-                        val color = when (dismissState.targetValue) {
-                            SwipeToDismissBoxValue.EndToStart -> RedReveal
-                            else -> Color.Transparent
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(color)
-                                .padding(end = 24.dp),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    tint = CreamText
-                                )
+        if (notifications.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "No Notifications",
+                        tint = MutedCream,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No notifications yet",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = CreamText,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "When you get notifications, they'll show up here",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedCream
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(notifications, key = { it.id }) { notification ->
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { dismissValue ->
+                            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                                viewModel.deleteNotification(notification)
+                                true
+                            } else {
+                                false
                             }
                         }
-                    },
-                    enableDismissFromStartToEnd = false
-                ) {
-                    NotificationCard(notification)
+                    )
+    
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        backgroundContent = {
+                            val color = when (dismissState.targetValue) {
+                                SwipeToDismissBoxValue.EndToStart -> RedReveal
+                                else -> Color.Transparent
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(color)
+                                    .padding(end = 24.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = CreamText
+                                    )
+                                }
+                            }
+                        },
+                        enableDismissFromStartToEnd = false
+                    ) {
+                        NotificationCard(
+                            notification = notification,
+                            onAddExpenseClick = {
+                                viewModel.setPendingSms(notification.id, notification.amount)
+                                onBack()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -114,7 +164,10 @@ fun NotificationsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun NotificationCard(notification: NotificationItem) {
+fun NotificationCard(
+    notification: NotificationItem,
+    onAddExpenseClick: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -155,6 +208,29 @@ fun NotificationCard(notification: NotificationItem) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedCream
                 )
+                
+                if (notification.amount != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (notification.isAdded) {
+                        Text(
+                            text = "Added",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = OliveAccent,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else if (onAddExpenseClick != null) {
+                        Button(
+                            onClick = onAddExpenseClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = OliveAccent, contentColor = NearBlack),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text("Add to Expenses", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+                
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = notification.time,

@@ -1,6 +1,11 @@
 package com.delwin.expnx
 
 import android.os.Bundle
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.ViewModelProvider
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
@@ -32,13 +37,36 @@ import com.delwin.expnx.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: AppViewModel
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        viewModel = ViewModelProvider(this, AppViewModel.Factory)[AppViewModel::class.java]
+
+        val permissions = mutableListOf(Manifest.permission.RECEIVE_SMS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        requestPermissionLauncher.launch(permissions.toTypedArray())
+
+        handleIntent(intent)
+
         setContent {
             EXPNXTheme {
                 val navController = rememberNavController()
-                val viewModel: AppViewModel = viewModel(factory = AppViewModel.Factory)
                 var showAddSheet by remember { mutableStateOf(false) }
+                
+                val pendingSms by viewModel.pendingSms.collectAsState()
+                LaunchedEffect(pendingSms) {
+                    if (pendingSms != null) {
+                        showAddSheet = true
+                    }
+                }
                 
                 Scaffold(
                     bottomBar = {
@@ -149,7 +177,10 @@ class MainActivity : ComponentActivity() {
                             InsightsScreen(viewModel)
                         }
                         composable(Screen.Notifications.route) {
-                            NotificationsScreen(onBack = { navController.popBackStack() })
+                            NotificationsScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
+                            )
                         }
                     }
                 }
@@ -157,6 +188,21 @@ class MainActivity : ComponentActivity() {
                 if (showAddSheet) {
                     AddScreen(viewModel = viewModel, onDismiss = { showAddSheet = false })
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let { handleIntent(it) }
+    }
+
+    private fun handleIntent(intent: Intent) {
+        if (intent.hasExtra("amount")) {
+            val amount = intent.getDoubleExtra("amount", 0.0)
+            val notificationId = intent.getStringExtra("notification_id")
+            if (amount > 0.0) {
+                viewModel.setPendingSms(notificationId, amount)
             }
         }
     }

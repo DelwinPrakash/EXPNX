@@ -51,6 +51,7 @@ fun AddScreen(
         ModalBottomSheet(
             onDismissRequest = { 
                 showAddExpenseSheet = false
+                viewModel.setPendingSms(null, null)
                 onDismiss() 
             },
             sheetState = sheetState,
@@ -58,6 +59,7 @@ fun AddScreen(
             contentColor = CreamText
         ) {
             AddExpenseSheet(
+                viewModel = viewModel,
                 onSave = { amount, category, description, date ->
                     viewModel.saveExpense(amount, category, description, date)
                     showAddExpenseSheet = false
@@ -65,6 +67,7 @@ fun AddScreen(
                 },
                 onCancel = { 
                     showAddExpenseSheet = false
+                    viewModel.setPendingSms(null, null)
                     onDismiss() 
                 }
             )
@@ -168,13 +171,28 @@ fun BottomSheetItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseSheet(
+    viewModel: AppViewModel,
     onSave: (Double, Category, String, Long) -> Unit,
     onCancel: () -> Unit
 ) {
+    val pendingSms by viewModel.pendingSms.collectAsState()
+    
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(Category.OTHER) }
     var amountError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(pendingSms) {
+        pendingSms?.let {
+            amount = it.amount.toString()
+            description = "SMS Debit Alert"
+            selectedCategory = Category.OTHER
+            // Do not clear it here, because saveExpense needs it to mark as added!
+            // Actually, if we keep it, it will stay in the viewmodel until saveExpense is called.
+            // But if the user dismisses the sheet without saving, it will stay.
+            // We should clear it on dismissal! We will handle this in AddScreen onDismiss.
+        }
+    }
     
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
     var showDatePicker by remember { mutableStateOf(false) }
