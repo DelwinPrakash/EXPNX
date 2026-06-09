@@ -129,7 +129,7 @@ fun InsightsScreen(viewModel: AppViewModel) {
             item { FinancialHealthSection(totalSpentThisMonth, budget, allExpenses) }
 
             // Reports
-            item { ReportsSection() }
+            // item { ReportsSection() }
         }
     }
 
