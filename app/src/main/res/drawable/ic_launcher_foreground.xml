@@ -3,6 +3,48 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Coin subtle outer border ring -->
     <path
-        android:pathData="M31,31h46v46h-46z" />
+        android:strokeColor="#4A3BB0"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,54m-30,0a30,30 0 1,0 60,0a30,30 0 1,0 -60,0" />
+
+    <!-- Coin main ring -->
+    <path
+        android:strokeColor="#A99AFF"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,54m-28,0a28,28 0 1,0 56,0a28,28 0 1,0 -56,0" />
+
+    <!-- Coin fill -->
+    <path
+        android:fillColor="#4A3DB5"
+        android:pathData="M54,54m-25,0a25,25 0 1,0 50,0a25,25 0 1,0 -50,0" />
+
+    <!-- Dollar sign vertical bar -->
+    <path
+        android:fillColor="#E0D8FF"
+        android:pathData="M56,34 L56,74 Q56,76 54,76 Q52,76 52,74 L52,34 Q52,32 54,32 Q56,32 56,34 Z" />
+
+    <!-- Dollar sign S curve -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E0D8FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M64,45 C64,38 44,38 44,45 C44,52 64,52 64,59 C64,66 44,66 44,59" />
+
+    <!-- Sparkle star top-left (moved inward to ~32,30) -->
+    <path
+        android:fillColor="#C8BEFF"
+        android:pathData="M32,28 L33.5,32 L37.5,33.5 L33.5,35 L32,39 L30.5,35 L26.5,33.5 L30.5,32 Z" />
+
+    <!-- Sparkle star bottom-right (moved inward to ~76,78) -->
+    <path
+        android:fillColor="#C8BEFF"
+        android:pathData="M76,76 L77.5,80 L81.5,81.5 L77.5,83 L76,87 L74.5,83 L70.5,81.5 L74.5,80 Z" />
+
 </vector>
