@@ -26,6 +26,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import com.delwin.expnx.ui.screens.NotificationItem
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import com.delwin.expnx.data.network.GeminiService
+import com.delwin.expnx.data.network.SpendingInsightResponse
+import com.delwin.expnx.data.InsightEntity
 
 data class DashboardUiState(
     val totalSpent: Double = 0.0,
@@ -37,6 +41,94 @@ class AppViewModel(
     private val repository: ExpenseRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
+
+    private val geminiService = GeminiService()
+    private val gson = com.google.gson.Gson()
+
+    private val _isLoadingInsights = MutableStateFlow(false)
+    val isLoadingInsights = _isLoadingInsights.asStateFlow()
+
+    private val _insightError = MutableStateFlow<String?>(null)
+    val insightError = _insightError.asStateFlow()
+
+    val aiInsights: StateFlow<SpendingInsightResponse?> = repository.allAiInsights
+        .map { entity ->
+            if (entity != null) {
+                try {
+                    val mapType = object : com.google.gson.reflect.TypeToken<Map<String, String>>() {}.type
+                    val categoryInsights: Map<String, String> = gson.fromJson(entity.categoryInsightsJson, mapType)
+                    SpendingInsightResponse(
+                        general_insight = entity.generalInsight,
+                        category_insights = categoryInsights
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun fetchAiInsights(force: Boolean = false) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val currentInsight = repository.allAiInsights.firstOrNull()
+            if (!force && currentInsight != null) {
+                return@launch
+            }
+
+            _isLoadingInsights.value = true
+            _insightError.value = null
+            try {
+                val expenses = allExpenses.value
+                val budgets = categoryBudgets.value
+                val totalBudget = budget.value ?: 5000.0
+
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val start = calendar.timeInMillis
+
+                val currentMonthExpenses = expenses.filter { it.date >= start }
+                val totalSpent = currentMonthExpenses.sumOf { it.amount }
+
+                val categorySpend = currentMonthExpenses
+                    .groupBy { it.category }
+                    .mapValues { entry -> entry.value.sumOf { it.amount } }
+
+                val dataBuilder = StringBuilder()
+                dataBuilder.append("Total Monthly Budget: ₹$totalBudget\n")
+                dataBuilder.append("Total Spent This Month: ₹$totalSpent\n\n")
+                dataBuilder.append("Category Spending & Budgets:\n")
+
+                for (category in Category.values()) {
+                    val catSpent = categorySpend[category] ?: 0.0
+                    val catBudget = budgets.find { it.category == category }?.budgetAmount ?: 5000.0
+                    dataBuilder.append("- ${category.displayName}: Spent ₹$catSpent out of budget ₹$catBudget\n")
+                }
+
+                val promptContent = dataBuilder.toString()
+                val response = geminiService.getSpendingInsights(promptContent)
+
+                val entity = InsightEntity(
+                    generalInsight = response.general_insight,
+                    categoryInsightsJson = gson.toJson(response.category_insights),
+                    lastUpdated = System.currentTimeMillis()
+                )
+                repository.insertInsight(entity)
+            } catch (e: java.net.UnknownHostException) {
+                _insightError.value = "OFFLINE"
+            } catch (e: Exception) {
+                _insightError.value = "ERROR"
+            } finally {
+                _isLoadingInsights.value = false
+            }
+        }
+    }
 
     data class PendingSms(val id: String?, val amount: Double)
 
