@@ -690,63 +690,57 @@ data class RecommendationDetail(
 
 val aiRecommendationsList = listOf(
     RecommendationDetail(
-        id = "food",
-        title = "Food Expense Analysis",
-        subtitle = "Budget Alert & Recommendation",
-        message = "You spent 22% more on food this month",
-        actionText = "Review",
-        icon = Icons.Default.Warning,
-        iconTint = BurntOrangeAccent,
-        summary = "Your food category spending is currently tracking 22% higher than your average monthly spend at this point. The main drivers are dining out and online food delivery services on weekends.",
-        metrics = listOf(
-            "Current Spend" to "₹9,780",
-            "Budget Limit" to "₹8,000",
-            "Deviation" to "+₹1,780 (+22%)"
-        ),
-        tips = listOf(
-            "Dining out spikes on Friday and Saturday nights contribute to 45% of the excess spend.",
-            "Delivery fees and taxes added ₹1,200 to your total this month.",
-            "💡 Tip: Try meal prepping for weekends or limit delivery orders to once a week."
-        )
-    ),
-    RecommendationDetail(
-        id = "subscriptions",
-        title = "Subscription Audit",
-        subtitle = "Potential Savings & Insights",
-        message = "You may save ₹3,000 by reducing subscriptions",
-        actionText = "View Subs",
-        icon = Icons.Default.Star,
-        iconTint = TanAccent,
-        summary = "Our AI detected multiple recurring subscriptions, some of which show little to no recent usage. Cancelling or pausing these can immediately improve your monthly savings rate.",
-        metrics = listOf(
-            "Total Subs" to "6 Active",
-            "Monthly Spend" to "₹4,850",
-            "Potential Save" to "₹3,000/mo"
-        ),
-        tips = listOf(
-            "Unused Streaming Service: ₹999/mo (No activity detected in the last 45 days).",
-            "Premium Fitness App: ₹1,500/mo (Hardly used this month).",
-            "💡 Tip: Set up a calendar reminder to review and cancel free trials before they auto-renew."
-        )
-    ),
-    RecommendationDetail(
-        id = "spikes",
-        title = "Weekend Spending Trend",
-        subtitle = "Behavioral Spikes Detected",
-        message = "Weekend spending spikes detected",
-        actionText = "Analyze",
+        id = "gathering_data",
+        title = "Gathering Financial Data",
+        subtitle = "Initial Analysis Setup",
+        message = "Our AI is preparing your first insights...",
+        actionText = "Wait",
         icon = Icons.Default.Info,
         iconTint = OliveAccent,
-        summary = "Over the last 4 weekends, your transactions show a recurring spending spike of 130% compared to weekdays. This behavior pattern is highly concentrated in Shopping and Entertainment categories.",
+        summary = "We are currently analyzing your initial expenses, budgets, and goals. Please continue logging your financial activities. Our AI engine will soon provide customized recommendations and spending alerts.",
         metrics = listOf(
-            "Weekday Avg" to "₹850/day",
-            "Weekend Avg" to "₹2,400/day",
-            "Top Peak" to "Saturdays (4-8 PM)"
+            "Status" to "Processing",
+            "Data Points" to "Gathering..."
         ),
         tips = listOf(
-            "Non-essential shopping is the primary driver of the weekend spike.",
-            "Entertainment accounts for 30% of weekend expenditures.",
-            "💡 Tip: Use a 'Weekend Wallet' with a set budget, or delay non-essential purchases by 24 hours."
+            "Log a few more transactions to help our AI understand your spending habits.",
+            "Set up specific budgets for key categories."
+        )
+    ),
+    RecommendationDetail(
+        id = "savings_potential",
+        title = "Future Savings Opportunities",
+        subtitle = "Predictive Analytics",
+        message = "Unlock tailored saving strategies soon",
+        actionText = "Learn More",
+        icon = Icons.Default.Star,
+        iconTint = TanAccent,
+        summary = "Based on your ongoing transaction history, EXPNX will identify recurring subscriptions, unnecessary expenditures, and provide actionable tips to help you save more money effectively.",
+        metrics = listOf(
+            "Potential Savings" to "Calculating...",
+            "Efficiency" to "Pending"
+        ),
+        tips = listOf(
+            "Keep your recurring bills updated in the Bills tab.",
+            "Regularly check your category breakdowns."
+        )
+    ),
+    RecommendationDetail(
+        id = "spending_trends",
+        title = "Spending Behavior Trends",
+        subtitle = "Pattern Recognition",
+        message = "Discover your spending habits over time",
+        actionText = "Explore",
+        icon = Icons.Default.Warning,
+        iconTint = BurntOrangeAccent,
+        summary = "Once sufficient data is available, this space will highlight anomalies like weekend spending spikes or over-budget categories, helping you stay aware of your financial behavior.",
+        metrics = listOf(
+            "Trend Status" to "Analyzing...",
+            "Risk Level" to "Pending"
+        ),
+        tips = listOf(
+            "Consistency is key—record all your daily purchases.",
+            "Your personalized trend alerts will appear here once ready."
         )
     )
 )
