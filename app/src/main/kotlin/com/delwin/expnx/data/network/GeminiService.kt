@@ -7,49 +7,100 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import com.google.gson.annotations.SerializedName
 
 data class GeminiRequest(
+    @SerializedName("contents")
     val contents: List<Content>,
+
+    @SerializedName("systemInstruction")
     val systemInstruction: SystemInstruction? = null,
+
+    @SerializedName("generationConfig")
     val generationConfig: GenerationConfig? = null
 ) {
-    data class Content(val parts: List<Part>)
-    data class Part(val text: String)
-    data class SystemInstruction(val parts: List<Part>)
-    data class GenerationConfig(val responseMimeType: String)
+    data class Content(
+        @SerializedName("parts")
+        val parts: List<Part>
+    )
+    data class Part(
+        @SerializedName("text")
+        val text: String
+    )
+    data class SystemInstruction(
+        @SerializedName("parts")
+        val parts: List<Part>
+    )
+    data class GenerationConfig(
+        @SerializedName("responseMimeType")
+        val responseMimeType: String
+    )
 }
 
 data class GeminiResponse(
+    @SerializedName("candidates")
     val candidates: List<Candidate>
 ) {
-    data class Candidate(val content: Content)
-    data class Content(val parts: List<Part>)
-    data class Part(val text: String)
+    data class Candidate(
+        @SerializedName("content")
+        val content: Content
+    )
+    data class Content(
+        @SerializedName("parts")
+        val parts: List<Part>
+    )
+    data class Part(
+        @SerializedName("text")
+        val text: String
+    )
 }
 
-data class MetricItem(val label: String, val value: String)
+data class MetricItem(
+    @SerializedName("label")
+    val label: String,
+    @SerializedName("value")
+    val value: String
+)
 
 data class GeminiRecommendation(
+    @SerializedName("id")
     val id: String,
+    @SerializedName("title")
     val title: String,
+    @SerializedName("subtitle")
     val subtitle: String,
+    @SerializedName("message")
     val message: String,
+    @SerializedName("actionText")
     val actionText: String,
+    @SerializedName("iconName")
     val iconName: String,
+    @SerializedName("summary")
     val summary: String,
+    @SerializedName("metrics")
     val metrics: List<MetricItem>,
+    @SerializedName("tips")
     val tips: List<String>
 )
 
 data class SpendingInsightResponse(
+    @SerializedName("general_insight")
     val general_insight: String,
+    @SerializedName("category_insights")
     val category_insights: Map<String, String>,
+    @SerializedName("budget_recommendation")
     val budget_recommendation: String? = null,
+    @SerializedName("goal_recommendation")
     val goal_recommendation: String? = null,
+    @SerializedName("expected_end_of_month_balance")
     val expected_end_of_month_balance: String? = null,
+    @SerializedName("forecasted_spending")
     val forecasted_spending: String? = null,
+    @SerializedName("upcoming_expense_prediction")
     val upcoming_expense_prediction: String? = null,
+    @SerializedName("cash_flow_risk_alert")
     val cash_flow_risk_alert: String? = null,
+    @SerializedName("recommendations")
     val recommendations: List<GeminiRecommendation>? = null
 )
 
