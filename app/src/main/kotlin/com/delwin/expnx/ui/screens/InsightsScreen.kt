@@ -384,7 +384,9 @@ fun RecommendationCard(
                 text = message,
                 color = CreamText,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.height(60.dp)
+                modifier = Modifier
+                    .height(60.dp)
+                    .padding(top = 2.dp, bottom = 10.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
