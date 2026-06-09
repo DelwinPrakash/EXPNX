@@ -43,6 +43,7 @@ fun BudgetsTab(viewModel: AppViewModel) {
     val budget by viewModel.budget.collectAsState()
     val categoryBudgetsList by viewModel.categoryBudgets.collectAsState()
     val categorySpending by viewModel.categorySpendThisMonth.collectAsState()
+    val aiInsights by viewModel.aiInsights.collectAsState()
 
     val actualBudget = budget ?: 0.0
     val progress = if (actualBudget > 0.0) {
@@ -127,7 +128,8 @@ fun BudgetsTab(viewModel: AppViewModel) {
             }
         }
 
-        // AI Suggested Budgets card — unchanged
+        // AI Suggested Budgets card
+        val budgetRecommendationText = aiInsights?.budget_recommendation ?: "Based on your spending behavior, optimizing your category budgets will help improve your savings velocity."
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0x15D67B2A)),
@@ -142,7 +144,7 @@ fun BudgetsTab(viewModel: AppViewModel) {
                 Column {
                     Text("Smart Recommendation", color = CreamText, fontWeight = FontWeight.Bold)
                     Text(
-                        "Based on your last 3 months, increasing your Grocery budget by ₹2,000 and decreasing Entertainment by ₹1,500 will improve savings.",
+                        text = budgetRecommendationText,
                         color = MutedCream,
                         style = MaterialTheme.typography.bodySmall
                     )

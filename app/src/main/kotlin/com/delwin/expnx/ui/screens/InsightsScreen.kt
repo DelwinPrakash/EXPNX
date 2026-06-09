@@ -41,12 +41,48 @@ fun InsightsScreen(viewModel: AppViewModel) {
     var showRecommendationSheet by remember { mutableStateOf(false) }
     var selectedRecommendationId by remember { mutableStateOf<String?>(null) }
 
+    val aiInsights by viewModel.aiInsights.collectAsState()
+
+    val activeRecommendations = remember(aiInsights) {
+        val list = aiInsights?.recommendations
+        if (!list.isNullOrEmpty()) {
+            list.map { geminiRec ->
+                val icon = when (geminiRec.iconName) {
+                    "Warning" -> Icons.Default.Warning
+                    "Star" -> Icons.Default.Star
+                    "Info" -> Icons.Default.Info
+                    else -> Icons.Default.Info
+                }
+                val tint = when (geminiRec.iconName) {
+                    "Warning" -> BurntOrangeAccent
+                    "Star" -> TanAccent
+                    "Info" -> OliveAccent
+                    else -> OliveAccent
+                }
+                RecommendationDetail(
+                    id = geminiRec.id,
+                    title = geminiRec.title,
+                    subtitle = geminiRec.subtitle,
+                    message = geminiRec.message,
+                    actionText = geminiRec.actionText,
+                    icon = icon,
+                    iconTint = tint,
+                    summary = geminiRec.summary,
+                    metrics = geminiRec.metrics.map { it.label to it.value },
+                    tips = geminiRec.tips
+                )
+            }
+        } else {
+            aiRecommendationsList
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
-                        "AI Intelligence", 
+                        "EXPNX Intelligence", 
                         color = CreamText, 
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
@@ -69,14 +105,25 @@ fun InsightsScreen(viewModel: AppViewModel) {
 
             // AI Recommendations
             item {
-                AIRecommendationsSection { recId ->
+                AIRecommendationsSection(activeRecommendations) { recId ->
                     selectedRecommendationId = recId
                     showRecommendationSheet = true
                 }
             }
 
             // Predictions
-            item { PredictionsSection() }
+            item {
+                val expectedBalance = aiInsights?.expected_end_of_month_balance ?: "₹45,200"
+                val forecasted = aiInsights?.forecasted_spending ?: "₹12,500"
+                val upcoming = aiInsights?.upcoming_expense_prediction ?: "₹4,000"
+                val riskAlert = aiInsights?.cash_flow_risk_alert ?: "Low Risk"
+                PredictionsSection(
+                    expectedEndOfMonthBalance = expectedBalance,
+                    forecastedSpending = forecasted,
+                    upcomingExpensePrediction = upcoming,
+                    cashFlowRiskAlert = riskAlert
+                )
+            }
 
             // Financial Health
             item { FinancialHealthSection(totalSpentThisMonth, budget, allExpenses) }
@@ -87,7 +134,7 @@ fun InsightsScreen(viewModel: AppViewModel) {
     }
 
     if (showRecommendationSheet && selectedRecommendationId != null) {
-        val selectedRec = aiRecommendationsList.find { it.id == selectedRecommendationId }
+        val selectedRec = activeRecommendations.find { it.id == selectedRecommendationId }
         if (selectedRec != null) {
             RecommendationBottomSheet(
                 recommendation = selectedRec,
@@ -291,7 +338,10 @@ fun SpendingTrendsSection(
 }
 
 @Composable
-fun AIRecommendationsSection(onActionClick: (String) -> Unit) {
+fun AIRecommendationsSection(
+    recommendations: List<RecommendationDetail>,
+    onActionClick: (String) -> Unit
+) {
     Column {
         SectionTitle("AI Recommendations")
         
@@ -299,31 +349,14 @@ fun AIRecommendationsSection(onActionClick: (String) -> Unit) {
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
+            items(recommendations.size) { index ->
+                val rec = recommendations[index]
                 RecommendationCard(
-                    icon = Icons.Default.Warning,
-                    iconTint = BurntOrangeAccent,
-                    message = "You spent 22% more on food this month",
-                    actionText = "Review",
-                    onActionClick = { onActionClick("food") }
-                )
-            }
-            item {
-                RecommendationCard(
-                    icon = Icons.Default.Star,
-                    iconTint = TanAccent,
-                    message = "You may save ₹3,000 by reducing subscriptions",
-                    actionText = "View Subs",
-                    onActionClick = { onActionClick("subscriptions") }
-                )
-            }
-            item {
-                RecommendationCard(
-                    icon = Icons.Default.Info,
-                    iconTint = OliveAccent,
-                    message = "Weekend spending spikes detected",
-                    actionText = "Analyze",
-                    onActionClick = { onActionClick("spikes") }
+                    icon = rec.icon,
+                    iconTint = rec.iconTint,
+                    message = rec.message,
+                    actionText = rec.actionText,
+                    onActionClick = { onActionClick(rec.id) }
                 )
             }
         }
@@ -369,15 +402,27 @@ fun RecommendationCard(
 }
 
 @Composable
-fun PredictionsSection() {
+fun PredictionsSection(
+    expectedEndOfMonthBalance: String,
+    forecastedSpending: String,
+    upcomingExpensePrediction: String,
+    cashFlowRiskAlert: String
+) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         SectionTitle("Predictions", modifier = Modifier.padding(horizontal = 0.dp))
         
+        val riskTint = when (cashFlowRiskAlert) {
+            "Low Risk" -> OliveAccent
+            "Medium Risk" -> TanAccent
+            "High Risk" -> RedReveal
+            else -> OliveAccent
+        }
+        
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PredictionItem("Expected end-of-month balance", "₹45,200", Icons.Default.AccountBalanceWallet)
-            PredictionItem("Forecasted spending", "₹12,500", Icons.Default.TrendingUp)
-            PredictionItem("Upcoming expense prediction", "₹4,000", Icons.Default.Event)
-            PredictionItem("Cash-flow risk alerts", "Low Risk", Icons.Default.VerifiedUser, tint = OliveAccent)
+            PredictionItem("Expected end-of-month balance", expectedEndOfMonthBalance, Icons.Default.AccountBalanceWallet)
+            PredictionItem("Forecasted spending", forecastedSpending, Icons.Default.TrendingUp)
+            PredictionItem("Upcoming expense prediction", upcomingExpensePrediction, Icons.Default.Event)
+            PredictionItem("Cash-flow risk alerts", cashFlowRiskAlert, Icons.Default.VerifiedUser, tint = riskTint)
         }
     }
 }
@@ -630,11 +675,12 @@ fun ReportCard(modifier: Modifier, title: String, icon: ImageVector, onClick: ()
 }
 
 // AI Recommendation Detail Structures & Premium Content
-
 data class RecommendationDetail(
     val id: String,
     val title: String,
     val subtitle: String,
+    val message: String,
+    val actionText: String,
     val icon: ImageVector,
     val iconTint: Color,
     val summary: String,
@@ -647,6 +693,8 @@ val aiRecommendationsList = listOf(
         id = "food",
         title = "Food Expense Analysis",
         subtitle = "Budget Alert & Recommendation",
+        message = "You spent 22% more on food this month",
+        actionText = "Review",
         icon = Icons.Default.Warning,
         iconTint = BurntOrangeAccent,
         summary = "Your food category spending is currently tracking 22% higher than your average monthly spend at this point. The main drivers are dining out and online food delivery services on weekends.",
@@ -665,6 +713,8 @@ val aiRecommendationsList = listOf(
         id = "subscriptions",
         title = "Subscription Audit",
         subtitle = "Potential Savings & Insights",
+        message = "You may save ₹3,000 by reducing subscriptions",
+        actionText = "View Subs",
         icon = Icons.Default.Star,
         iconTint = TanAccent,
         summary = "Our AI detected multiple recurring subscriptions, some of which show little to no recent usage. Cancelling or pausing these can immediately improve your monthly savings rate.",
@@ -683,6 +733,8 @@ val aiRecommendationsList = listOf(
         id = "spikes",
         title = "Weekend Spending Trend",
         subtitle = "Behavioral Spikes Detected",
+        message = "Weekend spending spikes detected",
+        actionText = "Analyze",
         icon = Icons.Default.Info,
         iconTint = OliveAccent,
         summary = "Over the last 4 weekends, your transactions show a recurring spending spike of 130% compared to weekdays. This behavior pattern is highly concentrated in Shopping and Entertainment categories.",

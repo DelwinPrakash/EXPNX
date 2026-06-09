@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.*
 import com.delwin.expnx.ui.screens.NotificationItem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import com.delwin.expnx.data.network.GeminiService
 import com.delwin.expnx.data.network.SpendingInsightResponse
 import com.delwin.expnx.data.InsightEntity
@@ -41,6 +43,22 @@ class AppViewModel(
     private val repository: ExpenseRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
+
+    init {
+        viewModelScope.launch {
+            @OptIn(kotlinx.coroutines.FlowPreview::class)
+            kotlinx.coroutines.flow.combine(
+                repository.allExpenses,
+                repository.allCategoryBudgets,
+                repository.allGoals,
+                repository.allBills
+            ) { _, _, _, _ -> true }
+                .debounce(2500)
+                .collect {
+                    fetchAiInsights(force = true)
+                }
+        }
+    }
 
     private val geminiService = GeminiService()
     private val gson = com.google.gson.Gson()
@@ -57,9 +75,21 @@ class AppViewModel(
                 try {
                     val mapType = object : com.google.gson.reflect.TypeToken<Map<String, String>>() {}.type
                     val categoryInsights: Map<String, String> = gson.fromJson(entity.categoryInsightsJson, mapType)
+                    val recsType = object : com.google.gson.reflect.TypeToken<List<com.delwin.expnx.data.network.GeminiRecommendation>>() {}.type
+                    val recommendations: List<com.delwin.expnx.data.network.GeminiRecommendation>? = if (entity.recommendationsJson != null) {
+                        gson.fromJson(entity.recommendationsJson, recsType)
+                    } else null
+
                     SpendingInsightResponse(
                         general_insight = entity.generalInsight,
-                        category_insights = categoryInsights
+                        category_insights = categoryInsights,
+                        budget_recommendation = entity.budgetRecommendation,
+                        goal_recommendation = entity.goalRecommendation,
+                        expected_end_of_month_balance = entity.expectedEndOfMonthBalance,
+                        forecasted_spending = entity.forecastedSpending,
+                        upcoming_expense_prediction = entity.upcomingExpensePrediction,
+                        cash_flow_risk_alert = entity.cashFlowRiskAlert,
+                        recommendations = recommendations
                     )
                 } catch (e: Exception) {
                     null
@@ -111,12 +141,39 @@ class AppViewModel(
                     dataBuilder.append("- ${category.displayName}: Spent ₹$catSpent out of budget ₹$catBudget\n")
                 }
 
+                val goals = goalsList.value
+                dataBuilder.append("\nActive Financial Goals:\n")
+                if (goals.isEmpty()) {
+                    dataBuilder.append("- No active goals set yet.\n")
+                } else {
+                    for (goal in goals) {
+                        dataBuilder.append("- ${goal.title}: Target ₹${goal.targetAmount}, Saved ₹${goal.savedAmount}, Target Date: ${goal.predictedDate}, Recommended Monthly Save: ₹${goal.monthlySuggestion}\n")
+                    }
+                }
+
+                val bills = billsList.value
+                dataBuilder.append("\nUpcoming & Active Bills:\n")
+                if (bills.isEmpty()) {
+                    dataBuilder.append("- No bills recorded yet.\n")
+                } else {
+                    for (bill in bills) {
+                        dataBuilder.append("- ${bill.title} (${bill.provider}): ₹${bill.amount}, Due Date: ${bill.dueDate}, Paid: ${bill.isPaid}\n")
+                    }
+                }
+
                 val promptContent = dataBuilder.toString()
                 val response = geminiService.getSpendingInsights(promptContent)
 
                 val entity = InsightEntity(
                     generalInsight = response.general_insight,
                     categoryInsightsJson = gson.toJson(response.category_insights),
+                    budgetRecommendation = response.budget_recommendation,
+                    goalRecommendation = response.goal_recommendation,
+                    expectedEndOfMonthBalance = response.expected_end_of_month_balance,
+                    forecastedSpending = response.forecasted_spending,
+                    upcomingExpensePrediction = response.upcoming_expense_prediction,
+                    cashFlowRiskAlert = response.cash_flow_risk_alert,
+                    recommendationsJson = gson.toJson(response.recommendations),
                     lastUpdated = System.currentTimeMillis()
                 )
                 repository.insertInsight(entity)

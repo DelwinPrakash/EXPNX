@@ -59,6 +59,7 @@ fun GoalsTab(viewModel: AppViewModel) {
     val scope = rememberCoroutineScope()
 
     val goalsList by viewModel.goalsList.collectAsState()
+    val aiInsights by viewModel.aiInsights.collectAsState()
 
     val availableIcons = listOf(
         Icons.Default.Savings,
@@ -82,6 +83,10 @@ fun GoalsTab(viewModel: AppViewModel) {
         ) {
             // AI Suggestion
             if (goalsList.isNotEmpty()) {
+                val goalRecommendationText = aiInsights?.goal_recommendation ?: run {
+                    val goalTitle = goalsList.first().title
+                    "You can reach your '$goalTitle' goal earlier by reducing non-essential category expenses."
+                }
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color(0x1594A853)), // Subtle Olive Accent
@@ -93,9 +98,8 @@ fun GoalsTab(viewModel: AppViewModel) {
                     ) {
                         Icon(Icons.Default.AutoAwesome, contentDescription = "AI", tint = OliveAccent, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(16.dp))
-                        val goalTitle = goalsList.first().title
                         Text(
-                            "You can reach your '$goalTitle' goal 2 months earlier by reducing dining expenses by 10%.",
+                            text = goalRecommendationText,
                             color = CreamText,
                             style = MaterialTheme.typography.bodyMedium
                         )

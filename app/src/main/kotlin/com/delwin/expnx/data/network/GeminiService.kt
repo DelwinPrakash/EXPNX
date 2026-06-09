@@ -27,9 +27,30 @@ data class GeminiResponse(
     data class Part(val text: String)
 }
 
+data class MetricItem(val label: String, val value: String)
+
+data class GeminiRecommendation(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val message: String,
+    val actionText: String,
+    val iconName: String,
+    val summary: String,
+    val metrics: List<MetricItem>,
+    val tips: List<String>
+)
+
 data class SpendingInsightResponse(
     val general_insight: String,
-    val category_insights: Map<String, String>
+    val category_insights: Map<String, String>,
+    val budget_recommendation: String? = null,
+    val goal_recommendation: String? = null,
+    val expected_end_of_month_balance: String? = null,
+    val forecasted_spending: String? = null,
+    val upcoming_expense_prediction: String? = null,
+    val cash_flow_risk_alert: String? = null,
+    val recommendations: List<GeminiRecommendation>? = null
 )
 
 class GeminiService {
@@ -49,10 +70,26 @@ class GeminiService {
 
         val systemPrompt = """
             You are an AI financial advisor for a personal finance tracker app named EXPNX. 
-            You will receive the user's monthly budget, total spending, and a breakdown of their expenses per category (with limit and actual spend).
-            Analyze their spending behavior and return a JSON object with:
+            You will receive the user's monthly budget, total spending, a breakdown of their expenses per category (with limit and actual spend), active financial goals, and upcoming/active bills.
+            Analyze their spending behavior, budgets, goals, and bills to return a JSON object with:
             1. "general_insight": A short, motivating, and punchy overall spending insight (maximum 15 words) that highlights a significant pattern or positive trend.
             2. "category_insights": A JSON object mapping Category names (FOOD, TRANSPORT, SHOPPING, HEALTH, ENTERTAINMENT, BILLS, OTHER) to specific, actionable, and personalized category-level recommendations or comments (maximum 25 words per category).
+            3. "budget_recommendation": A specific, personalized suggestion (maximum 25 words) for setting or optimizing category budgets based on recent spending patterns.
+            4. "goal_recommendation": A specific, motivating suggestion (maximum 25 words) to help achieve active goals faster, referencing one of their active goal names and suggesting dining/shopping cuts. If no active goals are set, return a generic goal saving recommendation.
+            5. "expected_end_of_month_balance": A predicted end of month balance based on current spending rate and active budgets (e.g. "₹42,300").
+            6. "forecasted_spending": A predicted total spending for this month (e.g. "₹12,500").
+            7. "upcoming_expense_prediction": A predicted upcoming expenses amount from active bills (e.g. "₹4,000").
+            8. "cash_flow_risk_alert": A cash-flow risk assessment (either "Low Risk", "Medium Risk", or "High Risk").
+            9. "recommendations": A JSON array of exactly 3 detailed recommendations. Each recommendation MUST contain:
+               - "id": A unique string id (e.g. "food", "subscriptions", "spikes").
+               - "title": A descriptive title.
+               - "subtitle": A category/alert description.
+               - "message": A short 1-sentence card description.
+               - "actionText": Action button label (e.g. "Review", "View Subs", "Analyze").
+               - "iconName": One of "Warning", "Star", "Info".
+               - "summary": A detailed summary explaining the analysis.
+               - "metrics": A list of exactly 3 metric items, each with "label" and "value" strings.
+               - "tips": A list of 2-3 specific financial action tips.
             
             Format of the output JSON response MUST be exactly:
             {
@@ -65,7 +102,34 @@ class GeminiService {
                 "ENTERTAINMENT": "...",
                 "BILLS": "...",
                 "OTHER": "..."
-              }
+              },
+              "budget_recommendation": "Specific budget suggestion.",
+              "goal_recommendation": "Specific goal achievement tip.",
+              "expected_end_of_month_balance": "₹45,200",
+              "forecasted_spending": "₹12,500",
+              "upcoming_expense_prediction": "₹4,000",
+              "cash_flow_risk_alert": "Low Risk",
+              "recommendations": [
+                {
+                  "id": "food",
+                  "title": "Food Expense Analysis",
+                  "subtitle": "Budget Alert & Recommendation",
+                  "message": "You spent 22% more on food this month",
+                  "actionText": "Review",
+                  "iconName": "Warning",
+                  "summary": "...",
+                  "metrics": [
+                    { "label": "Current Spend", "value": "₹9,780" },
+                    { "label": "Budget Limit", "value": "₹8,000" },
+                    { "label": "Deviation", "value": "+₹1,780 (+22%)" }
+                  ],
+                  "tips": [
+                    "Dining out spikes on Friday and Saturday nights contribute to 45% of the excess spend.",
+                    "💡 Tip: Try meal prepping for weekends."
+                  ]
+                },
+                ...
+              ]
             }
         """.trimIndent()
 
