@@ -570,26 +570,37 @@ fun HealthComponent(label: String, value: String, icon: ImageVector) {
 
 @Composable
 fun ReportsSection() {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         SectionTitle("Reports", modifier = Modifier.padding(horizontal = 0.dp))
         
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Weekly\nReport", Icons.Default.InsertChart)
-            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Monthly\nSummary", Icons.Default.PieChart)
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Weekly\nReport", Icons.Default.InsertChart) {
+                android.widget.Toast.makeText(context, "Generating Weekly Report...", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Monthly\nSummary", Icons.Default.PieChart) {
+                android.widget.Toast.makeText(context, "Generating Monthly Summary...", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ReportCard(Modifier.weight(1f).fillMaxHeight(), "AI-Generated\nPDF", Icons.Default.PictureAsPdf)
-            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Export\nCSV", Icons.Default.FileDownload)
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "AI-Generated\nPDF", Icons.Default.PictureAsPdf) {
+                android.widget.Toast.makeText(context, "Creating AI-Generated PDF...", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            ReportCard(Modifier.weight(1f).fillMaxHeight(), "Export\nCSV", Icons.Default.FileDownload) {
+                android.widget.Toast.makeText(context, "Exporting to CSV...", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
 
 @Composable
-fun ReportCard(modifier: Modifier, title: String, icon: ImageVector) {
+fun ReportCard(modifier: Modifier, title: String, icon: ImageVector, onClick: () -> Unit) {
     Box(
         modifier = modifier
-            .background(SurfaceDark, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfaceDark)
+            .clickable { onClick() }
             .padding(16.dp),
         contentAlignment = Alignment.CenterStart
     ) {
