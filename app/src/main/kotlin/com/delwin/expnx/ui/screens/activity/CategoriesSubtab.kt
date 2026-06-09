@@ -44,6 +44,14 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
     val allExpenses by viewModel.allExpenses.collectAsState()
     val categoryBudgets by viewModel.categoryBudgets.collectAsState()
 
+    val aiInsights by viewModel.aiInsights.collectAsState()
+    val isLoadingInsights by viewModel.isLoadingInsights.collectAsState()
+    val insightError by viewModel.insightError.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchAiInsights()
+    }
+
     var showCategoryDetail by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
@@ -56,8 +64,17 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
     ) {
         // AI Insights Header
         item {
+            val showRetry = insightError != null || (!isLoadingInsights && aiInsights == null)
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (showRetry) {
+                            Modifier.clickable { viewModel.fetchAiInsights(force = true) }
+                        } else {
+                            Modifier
+                        }
+                    ),
                 colors = CardDefaults.cardColors(containerColor = TanAccent.copy(alpha = 0.1f)),
                 shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, TanAccent.copy(alpha = 0.3f))
@@ -66,11 +83,49 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Insights, contentDescription = "Insights", tint = TanAccent)
+                    if (isLoadingInsights) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = TanAccent,
+                            strokeWidth = 2.dp
+                        )
+                    } else if (insightError == "OFFLINE") {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Offline",
+                            tint = BurntOrangeAccent,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Icon(Icons.Default.Insights, contentDescription = "Insights", tint = TanAccent)
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text("AI Spending Insight", style = MaterialTheme.typography.titleMedium, color = CreamText, fontWeight = FontWeight.Bold)
-                        Text("You've spent 20% less on Food this month. Keep it up!", style = MaterialTheme.typography.bodyMedium, color = MutedCream)
+                        val textContent = when {
+                            isLoadingInsights -> "Analyzing your spending patterns..."
+                            aiInsights != null -> aiInsights?.general_insight ?: ""
+                            insightError == "OFFLINE" -> "No internet connection. Tap to retry."
+                            insightError == "ERROR" -> "Could not refresh insights. Tap to retry."
+                            else -> "Tap to get AI-powered insights."
+                        }
+                        if (textContent.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = textContent,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = CreamText
+                            )
+                        }
+                        if (aiInsights != null && insightError != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = if (insightError == "OFFLINE") "Offline mode: Showing saved insights" else "Showing saved insights",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (insightError == "OFFLINE") BurntOrangeAccent else MutedCream,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
@@ -153,12 +208,14 @@ fun CategoriesSubtab(viewModel: AppViewModel) {
         val selectedCategoryBudget = categoryBudgets.find { it.category == selectedCategory }
         val limit = selectedCategoryBudget?.budgetAmount ?: 5000.0
         val spentAmount = allExpenses.filter { it.category == selectedCategory }.sumOf { it.amount }
+        val dynamicRecommendation = aiInsights?.category_insights?.get(selectedCategory!!.name)
         
         CategoryDetailBottomSheet(
             category = selectedCategory!!,
             budgetLimit = limit,
             spent = spentAmount,
             allExpenses = allExpenses,
+            aiRecommendation = dynamicRecommendation,
             onDismiss = { showCategoryDetail = false }
         )
     }
@@ -171,6 +228,7 @@ fun CategoryDetailBottomSheet(
     budgetLimit: Double,
     spent: Double,
     allExpenses: List<Expense>,
+    aiRecommendation: String?,
     onDismiss: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -474,13 +532,15 @@ fun CategoryDetailBottomSheet(
                 }
 
                 // Section 3: AI Recommendations
-                val recommendation = remember(spent, budgetLimit, category) {
-                    val pct = spent / budgetLimit
-                    when {
-                        pct > 1.0 -> "Recommendation: You've exceeded your spending budget in ${category.displayName}. We recommend freezing non-essential category spends for the rest of the month."
-                        pct >= 0.8 -> "Alert: You've consumed ${(pct * 100).toInt()}% of your ${category.displayName} budget limit. Consider trimming down unnecessary costs here to prevent going over."
-                        pct <= 0.3 -> "Outstanding: Your ${category.displayName} expenses are well-contained, using just ${(pct * 100).toInt()}% of your limit. Keep it up!"
-                        else -> "Discipline: Your spending velocity for ${category.displayName} is healthy. Keep tracking daily payments to sustain this momentum."
+                val recommendation = remember(spent, budgetLimit, category, aiRecommendation) {
+                    aiRecommendation ?: run {
+                        val pct = spent / budgetLimit
+                        when {
+                            pct > 1.0 -> "Recommendation: You've exceeded your spending budget in ${category.displayName}. We recommend freezing non-essential category spends for the rest of the month."
+                            pct >= 0.8 -> "Alert: You've consumed ${(pct * 100).toInt()}% of your ${category.displayName} budget limit. Consider trimming down unnecessary costs here to prevent going over."
+                            pct <= 0.3 -> "Outstanding: Your ${category.displayName} expenses are well-contained, using just ${(pct * 100).toInt()}% of your limit. Keep it up!"
+                            else -> "Discipline: Your spending velocity for ${category.displayName} is healthy. Keep tracking daily payments to sustain this momentum."
+                        }
                     }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

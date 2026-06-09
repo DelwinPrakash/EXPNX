@@ -11,7 +11,8 @@ class ExpenseRepository(
     private val expenseDao: ExpenseDao,
     private val billDao: BillDao,
     private val goalDao: GoalDao,
-    private val notificationDao: NotificationDao
+    private val notificationDao: NotificationDao,
+    private val insightDao: InsightDao
 ) {
     val allExpenses: Flow<List<Expense>> = expenseDao.getAllExpenses()
 
@@ -91,4 +92,10 @@ class ExpenseRepository(
     suspend fun markNotificationAsRead(id: String) = notificationDao.markAsRead(id)
 
     suspend fun markNotificationAsAdded(id: String) = notificationDao.markAsAdded(id)
+
+    val allAiInsights: Flow<InsightEntity?> = insightDao.getInsight()
+
+    suspend fun insertInsight(insight: InsightEntity) = insightDao.insertInsight(insight)
+
+    suspend fun clearInsights() = insightDao.clearInsights()
 }
