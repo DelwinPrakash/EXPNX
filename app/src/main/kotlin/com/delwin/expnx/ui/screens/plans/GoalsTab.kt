@@ -647,7 +647,7 @@ fun GoalCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             LinearProgressIndicator(
-                progress = progress,
+                progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
@@ -673,7 +673,7 @@ fun GoalCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Divider(color = GlassBorder)
+            HorizontalDivider(color = GlassBorder)
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {

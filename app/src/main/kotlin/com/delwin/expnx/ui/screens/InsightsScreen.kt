@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -422,7 +423,7 @@ fun PredictionsSection(
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PredictionItem("Expected end-of-month balance", expectedEndOfMonthBalance, Icons.Default.AccountBalanceWallet)
-            PredictionItem("Forecasted spending", forecastedSpending, Icons.Default.TrendingUp)
+            PredictionItem("Forecasted spending", forecastedSpending, Icons.AutoMirrored.Filled.TrendingUp)
             PredictionItem("Upcoming expense prediction", upcomingExpensePrediction, Icons.Default.Event)
             PredictionItem("Cash-flow risk alerts", cashFlowRiskAlert, Icons.Default.VerifiedUser, tint = riskTint)
         }
